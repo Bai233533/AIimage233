@@ -1,0 +1,32 @@
+# 依赖目录
+node_modules/
+
+# 小程序编译目录
+miniprogram_npm/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+*.temp
+
+# 云函数依赖
+cloudfunctions/*/node_modules/
+
+# 日志
+*.log
+
+# 环境变量
+.env
+.env.local
+
+# 测试文件
+test-*.js
