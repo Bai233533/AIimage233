@@ -1,0 +1,45 @@
+<view class="modal-mask" wx:if="{{visible}}" bindtap="onConfirm">
+  <view class="modal-content" catchtap="stopPropagation">
+    <!-- 生成中模式 -->
+    <block wx:if="{{mode === 'generating'}}">
+      <!-- 图标 -->
+      <view class="modal-icon">
+        <view class="loading-ring"></view>
+        <text class="icon-text">✨</text>
+      </view>
+      <!-- 标题 -->
+      <text class="modal-title">图片生成中</text>
+      <!-- 描述 -->
+      <text class="modal-desc">{{message || '您的创意图正在精心制作中，请耐心等待💗'}}</text>
+      <text class="modal-hint">稍后完成会提示您，可在历史记录查看哦</text>
+      <!-- 按钮 -->
+      <view class="modal-buttons">
+        <view class="btn-primary" bindtap="onConfirm">
+          <text>我知道了</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 完成模式 -->
+    <block wx:if="{{mode === 'completed'}}">
+      <!-- 图标 -->
+      <view class="modal-icon completed-icon">
+        <text class="icon-text">✅</text>
+      </view>
+      <!-- 标题 -->
+      <text class="modal-title">生成完成</text>
+      <!-- 描述 -->
+      <text class="modal-desc">您的创意图已完成，快去查看吧🎉</text>
+      <text class="modal-hint">可在历史记录中查看和保存</text>
+      <!-- 按钮 -->
+      <view class="modal-buttons">
+        <view class="btn-secondary" bindtap="onConfirm">
+          <text>继续生成</text>
+        </view>
+        <view class="btn-primary" bindtap="onView">
+          <text>查看记录</text>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

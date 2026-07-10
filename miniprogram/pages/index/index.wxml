@@ -1,0 +1,159 @@
+<view class="container">
+  <!-- 标题区域 -->
+  <view class="header">
+    <view class="title-row">
+      <text class="title">✨</text>
+      <view class="title-text-wrap">
+        <text class="subtitle">商品图制作</text>
+        <text class="main-title">一键生成爆款图</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 上传产品图 -->
+  <view class="section glass-card">
+    <view class="section-title">上传产品图</view>
+    <view class="upload-btn-row" wx:if="{{!imageSrc}}">
+      <view class="upload-btn-album" bindtap="chooseImageFromAlbum">
+        <text class="upload-btn-icon">🖼️</text>
+        <text class="upload-btn-text">从相册选择</text>
+      </view>
+      <view class="upload-btn-camera" bindtap="chooseImageFromCamera">
+        <text class="upload-btn-icon">📷</text>
+        <text class="upload-btn-text">拍照</text>
+      </view>
+    </view>
+    <view class="preview-area" wx:else>
+      <image class="preview-image" src="{{imageSrc}}" mode="aspectFill" />
+      <view class="remove-btn" bindtap="removeImage">×</view>
+    </view>
+  </view>
+
+  <!-- 上传参考图 -->
+  <view class="section glass-card">
+    <view class="section-title">上传参考图（选填）</view>
+    <view class="reference-upload-list">
+      <!-- 参考图1 -->
+      <view class="reference-upload-item" wx:if="{{referenceImages[0]}}">
+        <image class="reference-image" src="{{referenceImages[0]}}" mode="aspectFill" />
+        <view class="reference-remove-btn" data-index="0" bindtap="removeReferenceImage">×</view>
+      </view>
+      <view class="reference-upload-item reference-upload-empty" wx:else bindtap="chooseReferenceImage" data-index="0">
+        <text class="reference-add-icon">+</text>
+      </view>
+      <!-- 参考图2 -->
+      <view class="reference-upload-item" wx:if="{{referenceImages[1]}}">
+        <image class="reference-image" src="{{referenceImages[1]}}" mode="aspectFill" />
+        <view class="reference-remove-btn" data-index="1" bindtap="removeReferenceImage">×</view>
+      </view>
+      <view class="reference-upload-item reference-upload-empty" wx:else bindtap="chooseReferenceImage" data-index="1">
+        <text class="reference-add-icon">+</text>
+      </view>
+      <!-- 参考图3 -->
+      <view class="reference-upload-item" wx:if="{{referenceImages[2]}}">
+        <image class="reference-image" src="{{referenceImages[2]}}" mode="aspectFill" />
+        <view class="reference-remove-btn" data-index="2" bindtap="removeReferenceImage">×</view>
+      </view>
+      <view class="reference-upload-item reference-upload-empty" wx:else bindtap="chooseReferenceImage" data-index="2">
+        <text class="reference-add-icon">+</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 选择照片比例 -->
+  <view class="section glass-card">
+    <view class="section-title">选择照片比例</view>
+    <view class="tags-wrap">
+      <view 
+        class="tag {{ratioIndex === index ? 'tag-active' : 'tag-default'}}" 
+        wx:for="{{ratios}}" 
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="selectRatio"
+      >
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 面向的群众 -->
+  <view class="section glass-card">
+    <view class="section-title">面向的群众</view>
+    <view class="tags-wrap">
+      <view 
+        class="tag {{audienceIndex === index ? 'tag-active' : 'tag-default'}}" 
+        wx:for="{{audiences}}" 
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="selectAudience"
+      >
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 发布平台 -->
+  <view class="section glass-card">
+    <view class="section-title">发布平台</view>
+    <view class="tags-wrap">
+      <view 
+        class="tag {{platformIndex === index ? 'tag-active' : 'tag-default'}}" 
+        wx:for="{{platforms}}" 
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="selectPlatform"
+      >
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 生成数量 -->
+  <view class="section glass-card">
+    <view class="section-title">生成数量</view>
+    <view class="tags-wrap">
+      <view 
+        class="tag {{generateCount === index ? 'tag-active' : 'tag-default'}}" 
+        wx:for="{{generateCounts}}" 
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="selectCount"
+      >
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 提示词 -->
+  <view class="section glass-card">
+    <view class="section-title">提示词</view>
+    <view class="prompt-area">
+      <textarea 
+        class="prompt-input" 
+        placeholder="输入提示词，描述你想要的效果..."
+        placeholderStyle="color: #BBBBBB"
+        value="{{prompt}}"
+        bindinput="onPromptInput"
+        maxlength="2000"
+      />
+      <view class="prompt-footer">
+        <text class="char-count">{{prompt.length}}/2000</text>
+        <view class="ai-generate-btn {{generatingPrompt ? 'ai-generate-btn-loading' : ''}}" bindtap="onGenerateAIPrompt">
+          <view class="ai-loading-spinner" wx:if="{{generatingPrompt}}"></view>
+          <text class="ai-icon" wx:else>✨</text>
+          <text>{{generatingPrompt ? '生成中...' : '智能生成提示词'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 生成按钮 -->
+  <view class="btn-wrap">
+    <button class="gradient-btn generate-btn" bindtap="onGenerateImage" disabled="{{generating}}">
+      {{generating ? '生成中...' : '生成图片'}}
+    </button>
+  </view>
+</view>
+
+<!-- 生成提示弹窗 -->
+<generate-modal visible="{{showModal}}" mode="{{modalMode}}" message="{{modalMessage}}" bind:confirm="onModalConfirm" bind:view="onModalView" />

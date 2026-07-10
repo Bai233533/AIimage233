@@ -1,0 +1,138 @@
+<view class="container">
+  <!-- 清空按钮 -->
+  <view class="header-actions" wx:if="{{historyList.length > 0}}">
+    <view class="clear-btn" bindtap="clearHistory">
+      <text>清空</text>
+    </view>
+  </view>
+
+  <!-- 时间筛选 -->
+  <view class="filter-bar">
+    <view 
+      class="filter-item {{timeRangeIndex === index ? 'filter-active' : ''}}" 
+      wx:for="{{timeRanges}}" 
+      wx:key="index"
+      data-index="{{index}}"
+      bindtap="selectTimeRange"
+    >
+      {{item}}
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{isEmpty}}">
+    <view class="empty-icon-wrap">
+      <text class="empty-icon"> </text>
+    </view>
+    <text class="empty-text">暂无生成记录</text>
+    <text class="empty-hint">去首页生成你的第一张创意图吧</text>
+  </view>
+
+  <!-- 分组历史记录列表 -->
+  <view class="history-list" wx:else>
+    <block wx:for="{{groupedHistory}}" wx:key="groupId">
+      <!-- 单张图片 -->
+      <view 
+        class="history-card" 
+        wx:if="{{item.isSingle}}"
+        data-item="{{item.images[0]}}"
+        bindtap="viewDetail"
+      >
+        <view class="card-image-wrap">
+          <image 
+            class="card-image" 
+            src="{{item.images[0].imageSrc}}" 
+            mode="aspectFill" 
+            binderror="onImageError"
+            data-index="{{0}}"
+            data-group-index="{{index}}"
+          />
+          <view class="image-error" wx:if="{{item.images[0].loadError}}">
+            <text class="error-text">图片已过期</text>
+          </view>
+        </view>
+        <view class="card-info">
+          <view class="card-tags">
+            <view class="tag-item tag-platform">
+              <text>{{item.platform}}</text>
+            </view>
+            <view class="tag-item tag-ratio">
+              <text>{{item.ratio}}</text>
+            </view>
+          </view>
+          <view class="card-meta">
+            <text class="meta-date">{{item.date}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 多张图片分组 -->
+      <view class="history-group" wx:else>
+        <!-- 分组头部 -->
+        <view class="group-header" data-groupid="{{item.groupId}}" bindtap="toggleGroup">
+          <view class="group-info">
+            <view class="group-count-badge">
+              <text>{{item.count}}张</text>
+            </view>
+            <view class="group-meta">
+              <text class="group-date">{{item.date}}</text>
+              <view class="group-tags">
+                <text class="mini-tag">{{item.platform}}</text>
+                <text class="mini-tag">{{item.ratio}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="group-expand {{expandedGroups[item.groupId] ? 'expanded' : ''}}">
+            <text>›</text>
+          </view>
+        </view>
+
+        <!-- 主图预览 -->
+        <view class="group-preview" data-groupid="{{item.groupId}}" bindtap="viewGroupDetail">
+          <image 
+            class="preview-main" 
+            src="{{item.images[0].imageSrc}}" 
+            mode="aspectFill"
+            binderror="onImageError"
+            data-index="{{0}}"
+            data-group-index="{{index}}"
+          />
+          <view class="image-error" wx:if="{{item.images[0].loadError}}">
+            <text class="error-text">图片已过期</text>
+          </view>
+          <view class="preview-count" wx:if="{{!expandedGroups[item.groupId]}}">
+            <text>+{{item.count - 1}}</text>
+          </view>
+        </view>
+
+        <!-- 展开的图片列表 -->
+        <view class="group-images-expanded" wx:if="{{expandedGroups[item.groupId]}}">
+          <view 
+            class="expanded-item" 
+            wx:for="{{item.images}}" 
+            wx:for-item="img"
+            wx:key="id"
+            data-item="{{img}}"
+            data-groupid="{{item.groupId}}"
+            bindtap="viewImage"
+          >
+            <view class="expanded-index">
+              <text>{{img.batchIndex}}</text>
+            </view>
+            <image 
+              class="expanded-image" 
+              src="{{img.imageSrc}}" 
+              mode="aspectFill"
+              binderror="onImageError"
+              data-index="{{index}}"
+              data-group-index="{{index}}"
+            />
+            <view class="image-error expanded-error" wx:if="{{img.loadError}}">
+              <text class="error-text">过期</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

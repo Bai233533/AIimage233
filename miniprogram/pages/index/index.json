@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "商品图制作",
+  "usingComponents": {
+    "generate-modal": "/components/generate-modal/generate-modal"
+  }
+}

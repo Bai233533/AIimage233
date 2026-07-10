@@ -1,0 +1,110 @@
+<view class="container" wx:if="{{detail}}">
+  <!-- 图片预览区域 -->
+  <view class="image-section">
+    <image 
+      class="detail-image" 
+      src="{{detail.imageSrc}}" 
+      mode="aspectFit"
+      bindtap="previewImage"
+    />
+    <view class="image-actions">
+      <view class="action-btn" bindtap="saveImage">
+        <text class="action-icon"> </text>
+        <text class="action-text">保存</text>
+      </view>
+      <button class="action-btn share-btn" open-type="share">
+        <text class="action-icon"> </text>
+        <text class="action-text">分享</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 原图区域 -->
+  <view class="source-section glass-card" wx:if="{{originalImage}}">
+    <view class="source-label">产品原图</view>
+    <image class="source-image" src="{{originalImage}}" mode="aspectFit" />
+  </view>
+
+  <!-- 参考图区域（有参考图时才显示） -->
+  <view class="source-section glass-card" wx:if="{{hasReferenceImages}}">
+    <view class="source-label">参考图</view>
+    <view class="reference-list">
+      <image class="reference-image" wx:for="{{referenceImages}}" wx:key="index" src="{{item}}" mode="aspectFit" />
+    </view>
+  </view>
+
+  <!-- 批量图片缩略图 -->
+  <view class="batch-thumbs" wx:if="{{isBatch}}">
+    <view class="batch-title">
+      <text>同批次图片 ({{batchImages.length}}张)</text>
+      <view class="save-all-btn" bindtap="saveAllImages">
+        <text>全部保存</text>
+      </view>
+    </view>
+    <scroll-view class="thumbs-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
+      <view class="thumbs-list">
+        <view 
+          class="thumb-item {{currentImageIndex === index ? 'thumb-active' : ''}}" 
+          wx:for="{{batchImages}}" 
+          wx:key="id"
+          data-index="{{index}}"
+          bindtap="switchImage"
+        >
+          <image class="thumb-image" src="{{item.imageSrc}}" mode="aspectFill" />
+          <view class="thumb-index">
+            <text>{{index + 1}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 信息卡片 -->
+  <view class="info-card glass-card">
+    <!-- 基本信息 -->
+    <view class="info-row">
+      <view class="info-item">
+        <text class="info-label">生成日期</text>
+        <text class="info-value">{{detail.date}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">类型</text>
+        <text class="info-value">{{detail.type}}</text>
+      </view>
+    </view>
+
+    <view class="info-row">
+      <view class="info-item">
+        <text class="info-label">平台</text>
+        <text class="info-value">{{detail.platform}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">比例</text>
+        <text class="info-value">{{detail.ratio}}</text>
+      </view>
+    </view>
+
+    <view class="info-row" wx:if="{{detail.audience && detail.audience !== '未选择'}}">
+      <view class="info-item full-width">
+        <text class="info-label">面向群众</text>
+        <text class="info-value">{{detail.audience}}</text>
+      </view>
+    </view>
+
+    <!-- 分隔线 -->
+    <view class="divider"></view>
+
+    <!-- 提示词 -->
+    <view class="prompt-section">
+      <view class="prompt-header">
+        <text class="prompt-title">✨ 提示词</text>
+        <view class="copy-btn" bindtap="copyPrompt">
+          <text> 复制</text>
+        </view>
+      </view>
+      <view class="prompt-content">
+        <text>{{detail.prompt}}</text>
+      </view>
+    </view>
+  </view>
+</view>

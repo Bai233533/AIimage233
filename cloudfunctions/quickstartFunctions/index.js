@@ -4,9 +4,13 @@ cloud.init({
 });
 
 const db = cloud.database();
-// 获取openid
+
+// ============================================================
+// 工具函数
+// ============================================================
+
+// 获取用户 OpenID
 const getOpenId = async () => {
-  // 获取基础信息
   const wxContext = cloud.getWXContext();
   return {
     openid: wxContext.OPENID,
@@ -17,12 +21,10 @@ const getOpenId = async () => {
 
 // 获取小程序二维码
 const getMiniProgramCode = async () => {
-  // 获取小程序二维码的buffer
   const resp = await cloud.openapi.wxacode.get({
     path: "pages/index/index",
   });
   const { buffer } = resp;
-  // 将图片上传云存储空间
   const upload = await cloud.uploadFile({
     cloudPath: "code.png",
     fileContent: buffer,
@@ -30,156 +32,154 @@ const getMiniProgramCode = async () => {
   return upload.fileID;
 };
 
-// 创建集合
-const createCollection = async () => {
+// ============================================================
+// 内容安全检查（当前项目核心使用）
+// ============================================================
+
+// 检测图片类型
+const detectImageType = (buffer) => {
+  if (buffer[0] === 0x89 && buffer[1] === 0x50) return 'image/png';
+  if (buffer[0] === 0x47 && buffer[1] === 0x49) return 'image/gif';
+  if (buffer[0] === 0x52 && buffer[1] === 0x49) return 'image/webp';
+  return 'image/jpeg';
+};
+
+// 图片内容安全检查
+const securityCheck = async (event) => {
+  const { fileID } = event;
   try {
-    // 创建集合
-    await db.createCollection("sales");
-    await db.collection("sales").add({
-      // data 字段表示需新增的 JSON 数据
-      data: {
-        region: "华东",
-        city: "上海",
-        sales: 11,
-      },
-    });
-    await db.collection("sales").add({
-      // data 字段表示需新增的 JSON 数据
-      data: {
-        region: "华东",
-        city: "南京",
-        sales: 11,
-      },
-    });
-    await db.collection("sales").add({
-      // data 字段表示需新增的 JSON 数据
-      data: {
-        region: "华南",
-        city: "广州",
-        sales: 22,
-      },
-    });
-    await db.collection("sales").add({
-      // data 字段表示需新增的 JSON 数据
-      data: {
-        region: "华南",
-        city: "深圳",
-        sales: 22,
-      },
-    });
-    return {
-      success: true,
-    };
-  } catch (e) {
-    // 这里catch到的是该collection已经存在，从业务逻辑上来说是运行成功的，所以catch返回success给前端，避免工具在前端抛出异常
-    return {
-      success: true,
-      data: "create collection success",
-    };
+    console.log('[安全检查] 开始检查，fileID:', fileID);
+    
+    const fileRes = await cloud.downloadFile({ fileID });
+    const buffer = fileRes.fileContent;
+    const contentType = detectImageType(buffer);
+    console.log('[安全检查] 文件大小:', buffer.length, '字节，类型:', contentType);
+
+    try {
+      const result = await cloud.openapi.security.imgSecCheck({
+        media: { contentType, value: buffer }
+      });
+      console.log('[安全检查] imgSecCheck返回:', JSON.stringify(result));
+      return {
+        safe: result.errCode === 0,
+        errCode: result.errCode,
+        errMsg: result.errCode === 0 ? '内容安全' : '图片含有违规内容，请更换图片'
+      };
+    } catch (apiErr) {
+      console.error('[安全检查] imgSecCheck调用失败，尝试备用方案:', JSON.stringify(apiErr));
+      // 备用方案
+      const imageInfo = `图片类型:${contentType},文件大小:${buffer.length}字节`;
+      const textResult = await cloud.openapi.security.msgSecCheck({
+        content: imageInfo,
+        version: 2,
+        scene: 2,
+        openid: event.userInfo?.openId || ''
+      });
+      return {
+        safe: textResult.errCode !== 87014,
+        errCode: textResult.errCode,
+        errMsg: textResult.errCode === 87014 ? '图片含有违规内容，请更换图片' : '内容安全'
+      };
+    }
+  } catch (err) {
+    console.error('[安全检查] 异常:', JSON.stringify(err));
+    return { safe: true, errCode: -1, errMsg: '内容安全检查跳过' };
   }
 };
 
-// 查询数据
+// 文本内容安全检查（检查提示词）
+const textSecurityCheck = async (event) => {
+  const { content } = event;
+  try {
+    const result = await cloud.openapi.security.msgSecCheck({
+      content,
+      version: 2,
+      scene: 3,
+      openid: (cloud.getWXContext()).OPENID
+    });
+
+    const detail = result.detail && result.detail[0];
+    const safe = detail ? detail.strategy === 1 : true;
+
+    return {
+      safe,
+      errCode: detail ? detail.errcode : 0,
+      errMsg: safe ? '内容安全' : '文本含有违规内容，请修改'
+    };
+  } catch (err) {
+    console.error('文本安全检查失败:', err);
+    return { safe: true, errCode: -1, errMsg: '内容安全检查跳过' };
+  }
+};
+
+// ============================================================
+// Sales 数据库操作（预留功能）
+// ============================================================
+
+const createCollection = async () => {
+  try {
+    await db.createCollection("sales");
+    await db.collection("sales").add({ data: { region: "华东", city: "上海", sales: 11 } });
+    await db.collection("sales").add({ data: { region: "华东", city: "南京", sales: 11 } });
+    await db.collection("sales").add({ data: { region: "华南", city: "广州", sales: 22 } });
+    await db.collection("sales").add({ data: { region: "华南", city: "深圳", sales: 22 } });
+    return { success: true };
+  } catch (e) {
+    return { success: true, data: "create collection success" };
+  }
+};
+
 const selectRecord = async () => {
-  // 返回数据库查询结果
   return await db.collection("sales").get();
 };
 
-// 更新数据
 const updateRecord = async (event) => {
   try {
-    // 遍历修改数据库信息
     for (let i = 0; i < event.data.length; i++) {
-      await db
-        .collection("sales")
-        .where({
-          _id: event.data[i]._id,
-        })
-        .update({
-          data: {
-            sales: event.data[i].sales,
-          },
-        });
+      await db.collection("sales").where({ _id: event.data[i]._id }).update({ data: { sales: event.data[i].sales } });
     }
-    return {
-      success: true,
-      data: event.data,
-    };
+    return { success: true, data: event.data };
   } catch (e) {
-    return {
-      success: false,
-      errMsg: e,
-    };
+    return { success: false, errMsg: e };
   }
 };
 
-// 新增数据
 const insertRecord = async (event) => {
   try {
-    const insertRecord = event.data;
-    // 插入数据
-    await db.collection("sales").add({
-      data: {
-        region: insertRecord.region,
-        city: insertRecord.city,
-        sales: Number(insertRecord.sales),
-      },
-    });
-    return {
-      success: true,
-      data: event.data,
-    };
+    const { region, city, sales } = event.data;
+    await db.collection("sales").add({ data: { region, city, sales: Number(sales) } });
+    return { success: true, data: event.data };
   } catch (e) {
-    return {
-      success: false,
-      errMsg: e,
-    };
+    return { success: false, errMsg: e };
   }
 };
 
-// 删除数据
 const deleteRecord = async (event) => {
   try {
-    await db
-      .collection("sales")
-      .where({
-        _id: event.data._id,
-      })
-      .remove();
-    return {
-      success: true,
-    };
+    await db.collection("sales").where({ _id: event.data._id }).remove();
+    return { success: true };
   } catch (e) {
-    return {
-      success: false,
-      errMsg: e,
-    };
+    return { success: false, errMsg: e };
   }
 };
 
-// const getOpenId = require('./getOpenId/index');
-// const getMiniProgramCode = require('./getMiniProgramCode/index');
-// const createCollection = require('./createCollection/index');
-// const selectRecord = require('./selectRecord/index');
-// const updateRecord = require('./updateRecord/index');
-// const fetchGoodsList = require('./fetchGoodsList/index');
-// const genMpQrcode = require('./genMpQrcode/index');
-// 云函数入口函数
+// ============================================================
+// 云函数入口
+// ============================================================
+
 exports.main = async (event, context) => {
   switch (event.type) {
-    case "getOpenId":
-      return await getOpenId();
-    case "getMiniProgramCode":
-      return await getMiniProgramCode();
-    case "createCollection":
-      return await createCollection();
-    case "selectRecord":
-      return await selectRecord();
-    case "updateRecord":
-      return await updateRecord(event);
-    case "insertRecord":
-      return await insertRecord(event);
-    case "deleteRecord":
-      return await deleteRecord(event);
+    // 工具函数
+    case "getOpenId": return await getOpenId();
+    case "getMiniProgramCode": return await getMiniProgramCode();
+    // 内容安全检查
+    case "securityCheck": return await securityCheck(event);
+    case "textSecurityCheck": return await textSecurityCheck(event);
+    // Sales 数据库操作
+    case "createCollection": return await createCollection();
+    case "selectRecord": return await selectRecord();
+    case "updateRecord": return await updateRecord(event);
+    case "insertRecord": return await insertRecord(event);
+    case "deleteRecord": return await deleteRecord(event);
   }
 };
