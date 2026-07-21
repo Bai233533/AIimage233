@@ -2,7 +2,8 @@
   "pages": [
     "pages/index/index",
     "pages/history/history",
-    "pages/detail/detail"
+    "pages/detail/detail",
+    "pages/profile/profile"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFFFF",
@@ -28,6 +29,12 @@
         "text": "历史记录",
         "iconPath": "images/icons/goods.png",
         "selectedIconPath": "images/icons/goods-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/icons/usercenter.png",
+        "selectedIconPath": "images/icons/usercenter-active.png"
       }
     ]
   },

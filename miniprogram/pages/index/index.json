@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "商品图制作",
+  "navigationBarTitleText": "AI漫剧大师",
   "usingComponents": {
     "generate-modal": "/components/generate-modal/generate-modal"
   }
