@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卡密管理 - AI漫剧大师</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 24px; margin-bottom: 8px; color: #fff; }
+  .sub { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .card h2 { font-size: 16px; margin-bottom: 16px; color: #93c5fd; }
+  label { display: block; font-size: 13px; color: #cbd5e1; margin-bottom: 6px; }
+  input, button { font-family: inherit; font-size: 14px; }
+  input { width: 100%; background: #0f172a; border: 1px solid #475569; color: #f1f5f9; padding: 10px 12px; border-radius: 8px; outline: none; }
+  input:focus { border-color: #3b82f6; }
+  .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .row-2 { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+  button { background: #2563eb; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background .2s; }
+  button:hover { background: #1d4ed8; }
+  button:disabled { background: #475569; cursor: not-allowed; }
+  button.ghost { background: #334155; }
+  button.ghost:hover { background: #475569; }
+  .btns { display: flex; gap: 10px; margin-top: 4px; }
+  .result { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-top: 12px; max-height: 520px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #334155; }
+  th { color: #93c5fd; font-weight: 600; position: sticky; top: 0; background: #1e293b; }
+  tr:hover { background: #1e293b; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .tag.unused { background: #064e3b; color: #34d399; }
+  .tag.used { background: #7f1d1d; color: #fca5a5; }
+  .key-cell { font-family: "Consolas", "SF Mono", monospace; color: #fde68a; }
+  .empty { text-align: center; color: #64748b; padding: 30px; }
+  .toast { position: fixed; top: 20px; right: 20px; background: #16a34a; color: #fff; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.3); z-index: 999; opacity: 0; transition: opacity .3s; }
+  .toast.show { opacity: 1; }
+  .toast.err { background: #dc2626; }
+  .copy-btn { background: none; border: 1px solid #475569; color: #94a3b8; padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+  .copy-btn:hover { background: #334155; color: #e2e8f0; }
+  @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>卡密管理后台</h1>
+  <p class="sub">AI漫剧大师 - 批量生成与查看卡密</p>
+
+  <!-- 管理员登录 -->
+  <div class="card">
+    <h2>① 管理员密钥</h2>
+    <input type="password" id="adminSecret" placeholder="输入管理员密钥" value="">
+  </div>
+
+  <!-- 生成卡密 -->
+  <div class="card">
+    <h2>② 批量生成卡密</h2>
+    <div class="row">
+      <div>
+        <label>生成数量</label>
+        <input type="number" id="count" value="10" min="1" max="500">
+      </div>
+      <div>
+        <label>卡密前缀</label>
+        <input type="text" id="prefix" value="VIP" maxlength="6">
+      </div>
+      <div>
+        <label>有效天数</label>
+        <input type="number" id="days" value="30" min="1">
+      </div>
+    </div>
+    <div class="btns">
+      <button onclick="generate()">生成卡密</button>
+      <button class="ghost" onclick="copyGenerated()">复制刚生成的</button>
+    </div>
+    <div class="result" id="genResult" style="display:none;"></div>
+  </div>
+
+  <!-- 卡密列表 -->
+  <div class="card">
+    <h2>③ 所有卡密</h2>
+    <div class="btns" style="margin-bottom:12px;">
+      <button onclick="loadList()">刷新列表</button>
+      <button class="ghost" onclick="copyAllUnused()">复制全部未使用</button>
+    </div>
+    <div class="result" id="listResult">
+      <div class="empty">点"刷新列表"查看所有卡密</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let lastGenerated = [];
+
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(() => t.className = 'toast', 2000);
+}
+
+async function generate() {
+  const adminSecret = document.getElementById('adminSecret').value.trim();
+  const count = document.getElementById('count').value;
+  const prefix = document.getElementById('prefix').value.trim();
+  const days = document.getElementById('days').value;
+  if (!adminSecret) return showToast('请填写管理员密钥', true);
+  if (!prefix) return showToast('请填写前缀', true);
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+  try {
+    const res = await fetch('/api/admin/generate-card-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminSecret, count: parseInt(count), prefix, days: parseInt(days) })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.errMsg || '生成失败');
+    lastGenerated = data.keys || [];
+    const box = document.getElementById('genResult');
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="color:#34d399;margin-bottom:8px;font-size:14px;">✓ 成功生成 ${data.count} 个卡密</div>
+      <table><thead><tr><th>#</th><th>卡密</th><th>有效天数</th><th>操作</th></tr></thead><tbody>
+      ${data.keys.map((k, i) => `
+        <tr><td>${i+1}</td><td class="key-cell">${k.key}</td><td>${k.days}天</td>
+        <td><button class="copy-btn" onclick="copyText('${k.key}')">复制</button></td></tr>
+      `).join('')}</tbody></table>
+    `;
+    showToast(`已生成 ${data.count} 个卡密`);
+  } catch (e) {
+    showToast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '生成卡密';
+  }
+}
+
+async function loadList() {
+  const adminSecret = document.getElementById('adminSecret').value.trim();
+  if (!adminSecret) return showToast('请填写管理员密钥', true);
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '加载中...';
+  try {
+    const res = await fetch('/api/admin/list-card-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminSecret })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.errMsg || '加载失败');
+    const box = document.getElementById('listResult');
+    if (!data.keys || data.keys.length === 0) {
+      box.innerHTML = '<div class="empty">暂无卡密</div>';
+    } else {
+      const unused = data.keys.filter(k => k.status === 'unused').length;
+      box.innerHTML = `
+        <div style="color:#94a3b8;margin-bottom:8px;font-size:13px;">共 ${data.keys.length} 个 · 未使用 ${unused} 个 · 已使用 ${data.keys.length - unused} 个</div>
+        <table><thead><tr><th>ID</th><th>卡密</th><th>状态</th><th>使用者</th><th>创建时间</th><th>操作</th></tr></thead><tbody>
+        ${data.keys.map(k => `
+          <tr>
+            <td>${k.id}</td>
+            <td class="key-cell">${k.key}</td>
+            <td><span class="tag ${k.status}">${k.status === 'unused' ? '未使用' : '已使用'}</span></td>
+            <td>${k.used_by || '-'}</td>
+            <td style="font-size:12px;color:#64748b;">${k.create_time || '-'}</td>
+            <td><button class="copy-btn" onclick="copyText('${k.key}')">复制</button></td>
+          </tr>
+        `).join('')}</tbody></table>
+      `;
+    }
+    showToast('列表已刷新');
+  } catch (e) {
+    showToast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '刷新列表';
+  }
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('已复制：' + text));
+}
+
+function copyGenerated() {
+  if (lastGenerated.length === 0) return showToast('还没有生成卡密', true);
+  const text = lastGenerated.map(k => k.key).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast(`已复制 ${lastGenerated.length} 个卡密`));
+}
+
+function copyAllUnused() {
+  // 从当前列表 DOM 提取未使用的卡密
+  const rows = document.querySelectorAll('#listResult tr');
+  const keys = [];
+  rows.forEach(row => {
+    const statusCell = row.querySelector('.tag.unused');
+    if (statusCell) {
+      const keyCell = row.querySelector('.key-cell');
+      if (keyCell) keys.push(keyCell.textContent);
+    }
+  });
+  if (keys.length === 0) return showToast('没有未使用的卡密', true);
+  navigator.clipboard.writeText(keys.join('\n')).then(() => showToast(`已复制 ${keys.length} 个未使用卡密`));
+}
+
+// 回车提交
+document.getElementById('adminSecret').addEventListener('keydown', e => {
+  if (e.key === 'Enter') generate();
+});
+</script>
+</body>
+</html>

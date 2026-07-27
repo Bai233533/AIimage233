@@ -365,6 +365,52 @@ ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
       return json({ success: true, reply });
     }
 
+    // ==================== 管理员API ====================
+
+    // 管理员鉴权
+    function isAdmin(body) {
+      return body.adminSecret === 'ADMIN_2026';
+    }
+
+    // 生成单个卡密
+    function makeCardKey(prefix) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let s = '';
+      for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+      return `${prefix}-${s}`;
+    }
+
+    // 批量生成卡密
+    if (path === '/api/admin/generate-card-keys' && method === 'POST') {
+      if (!isAdmin(body)) return json({ success: false, errMsg: '管理员密钥错误' }, 401);
+      const count = Math.min(parseInt(body.count) || 10, 500);
+      const prefix = (body.prefix || 'VIP').toUpperCase();
+      const days = parseInt(body.days) || 30;
+      const now = new Date().toISOString();
+      const created = [];
+      for (let i = 0; i < count; i++) {
+        const key = makeCardKey(prefix);
+        try {
+          await env.DB.prepare(
+            'INSERT INTO card_keys (key, status, create_time) VALUES (?, ?, ?)'
+          ).bind(key, 'unused', now).run();
+          created.push({ key, days });
+        } catch (e) {
+          // 唯一键冲突就跳过重试
+        }
+      }
+      return json({ success: true, count: created.length, keys: created });
+    }
+
+    // 查询所有卡密
+    if (path === '/api/admin/list-card-keys' && method === 'POST') {
+      if (!isAdmin(body)) return json({ success: false, errMsg: '管理员密钥错误' }, 401);
+      const { results } = await env.DB.prepare(
+        'SELECT id, key, status, used_by, used_time, create_time FROM card_keys ORDER BY id DESC LIMIT 1000'
+      ).all();
+      return json({ success: true, keys: results || [] });
+    }
+
     // 404
     return json({ error: 'API not found' }, 404);
 
