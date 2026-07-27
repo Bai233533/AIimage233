@@ -1,19 +1,7 @@
 /**
  * Cloudflare Workers - AI漫剧大师 后端API
+ * 使用 Cloudflare D1 数据库存储用户数据
  */
-
-// 内存存储（开发用，生产建议用KV或D1）
-const users = new Map();
-const cardKeys = new Map();
-
-// 初始化测试卡密
-const initTestCardKeys = () => {
-  const testKeys = ['VIP-TEST-1234', 'VIP-DEMO-5678'];
-  testKeys.forEach(key => {
-    cardKeys.set(key, { key, status: 'unused', createTime: new Date() });
-  });
-};
-initTestCardKeys();
 
 // CORS 头
 const corsHeaders = {
@@ -24,7 +12,6 @@ const corsHeaders = {
 
 // 工具函数
 function generateToken(openid) {
-  // 简单的token生成（生产环境建议用JWT）
   return btoa(openid + ':' + Date.now());
 }
 
@@ -49,7 +36,6 @@ function extractPromptFromAIResult(fullContent) {
   return fullContent;
 }
 
-// 调用豆包AI API
 async function callDoubaoAPI(messages, apiKey, model) {
   const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/responses', {
     method: 'POST',
@@ -77,7 +63,7 @@ async function callDoubaoAPI(messages, apiKey, model) {
 
 // 主处理函数
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     // 处理 CORS 预检请求
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
@@ -91,7 +77,10 @@ export default {
       // 解析请求体
       let body = {};
       if (method === 'POST') {
-        body = await request.json();
+        const bodyText = await request.text();
+        if (bodyText) {
+          body = JSON.parse(bodyText);
+        }
       }
 
       // ==================== 认证API ====================
@@ -102,23 +91,26 @@ export default {
         if (!username || !password) {
           return Response.json({ success: false, errMsg: '账号和密码不能为空' }, { headers: corsHeaders });
         }
-        let user = null;
-        for (const [_, u] of users) {
-          if (u.username === username) { user = u; break; }
-        }
-        if (!user) {
+
+        const { results } = await env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).all();
+
+        if (results.length === 0) {
           return Response.json({ success: false, errMsg: '账号不存在' }, { headers: corsHeaders });
         }
+
+        const user = results[0];
         if (user.password !== password) {
           return Response.json({ success: false, errMsg: '密码错误' }, { headers: corsHeaders });
         }
+
         const now = new Date();
-        const isMember = user.expireTime && new Date(user.expireTime) > now;
+        const isMember = user.expire_time && new Date(user.expire_time) > now;
+
         return Response.json({
           success: true,
           username: user.username,
           isMember,
-          expireTime: user.expireTime,
+          expireTime: user.expire_time,
           token: generateToken(user.openid)
         }, { headers: corsHeaders });
       }
@@ -129,17 +121,27 @@ export default {
         if (!username || !password) {
           return Response.json({ success: false, errMsg: '账号和密码不能为空' }, { headers: corsHeaders });
         }
-        let exists = false;
-        for (const [_, u] of users) {
-          if (u.username === username) { exists = true; break; }
+        if (username.length < 2 || username.length > 20) {
+          return Response.json({ success: false, errMsg: '账号需2-20个字符' }, { headers: corsHeaders });
         }
-        if (exists) {
+        if (password.length < 6 || password.length > 20) {
+          return Response.json({ success: false, errMsg: '密码需6-20个字符' }, { headers: corsHeaders });
+        }
+
+        const { results } = await env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).all();
+
+        if (results.length > 0) {
           return Response.json({ success: false, errMsg: '该账号已被注册' }, { headers: corsHeaders });
         }
+
         const openid = 'web_' + crypto.randomUUID();
         const now = new Date();
-        const expireTime = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000);
-        users.set(openid, { openid, username, password, expireTime, createTime: now, freeUsed: 0 });
+        const expireTime = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString();
+
+        await env.DB.prepare(
+          'INSERT INTO users (openid, username, password, expire_time, free_used) VALUES (?, ?, ?, ?, 0)'
+        ).bind(openid, username, password, expireTime).run();
+
         return Response.json({
           success: true,
           username,
@@ -156,17 +158,28 @@ export default {
         if (!token) {
           return Response.json({ success: true, isMember: false, isNewUser: true }, { headers: corsHeaders });
         }
+
         const decoded = verifyToken(token);
         if (!decoded) {
           return Response.json({ success: true, isMember: false, isNewUser: true }, { headers: corsHeaders });
         }
-        const user = users.get(decoded.openid);
-        if (!user) {
+
+        const { results } = await env.DB.prepare('SELECT * FROM users WHERE openid = ?').bind(decoded.openid).all();
+
+        if (results.length === 0) {
           return Response.json({ success: true, isMember: false, isNewUser: true }, { headers: corsHeaders });
         }
+
+        const user = results[0];
         const now = new Date();
-        const isMember = user.expireTime && new Date(user.expireTime) > now;
-        return Response.json({ success: true, isMember, isNewUser: false, expireTime: user.expireTime }, { headers: corsHeaders });
+        const isMember = user.expire_time && new Date(user.expire_time) > now;
+
+        return Response.json({
+          success: true,
+          isMember,
+          isNewUser: false,
+          expireTime: user.expire_time
+        }, { headers: corsHeaders });
       }
 
       // 卡密验证
@@ -174,35 +187,55 @@ export default {
         const { cardKey } = body;
         const authHeader = request.headers.get('Authorization');
         const token = authHeader?.replace('Bearer ', '');
+
         if (!cardKey) {
           return Response.json({ success: false, errMsg: '请输入卡密' }, { headers: corsHeaders });
         }
         if (!token) {
           return Response.json({ success: false, errMsg: '请先登录' }, { headers: corsHeaders });
         }
+
         const decoded = verifyToken(token);
         if (!decoded) {
           return Response.json({ success: false, errMsg: '登录已过期' }, { headers: corsHeaders });
         }
-        const cardRecord = cardKeys.get(cardKey.trim().toUpperCase());
-        if (!cardRecord || cardRecord.status !== 'unused') {
+
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM card_keys WHERE key = ? AND status = ?'
+        ).bind(cardKey.trim().toUpperCase(), 'unused').all();
+
+        if (results.length === 0) {
           return Response.json({ success: false, errMsg: '卡密无效或已被使用' }, { headers: corsHeaders });
         }
+
+        const cardRecord = results[0];
         const now = new Date();
-        cardRecord.status = 'used';
-        cardRecord.usedBy = decoded.openid;
-        cardRecord.usedTime = now;
-        const user = users.get(decoded.openid);
+
+        // 更新卡密状态
+        await env.DB.prepare(
+          'UPDATE card_keys SET status = ?, used_by = ?, used_time = ? WHERE id = ?'
+        ).bind('used', decoded.openid, now.toISOString(), cardRecord.id).run();
+
+        // 获取用户信息
+        const { results: userResults } = await env.DB.prepare(
+          'SELECT * FROM users WHERE openid = ?'
+        ).bind(decoded.openid).all();
+
         let expireTime;
-        if (user) {
-          const currentExpire = user.expireTime ? new Date(user.expireTime) : now;
+        if (userResults.length > 0) {
+          const user = userResults[0];
+          const currentExpire = user.expire_time ? new Date(user.expire_time) : now;
           expireTime = currentExpire > now
-            ? new Date(currentExpire.getTime() + 30 * 24 * 60 * 60 * 1000)
-            : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-          user.expireTime = expireTime;
+            ? new Date(currentExpire.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+          await env.DB.prepare(
+            'UPDATE users SET expire_time = ? WHERE openid = ?'
+          ).bind(expireTime, decoded.openid).run();
         } else {
-          expireTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+          expireTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
         }
+
         return Response.json({ success: true, expireTime }, { headers: corsHeaders });
       }
 
