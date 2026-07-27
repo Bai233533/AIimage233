@@ -2,13 +2,13 @@
  * api.js - 调用后端API
  * 
  * 配置说明：
- * 部署 Workers 后，将下面的 API_BASE 改为你的 Workers 域名
- * 例如：https://ai-drama-api.your-name.workers.dev
+ * 使用 Cloudflare Pages Functions，后端和前端同域
+ * API_BASE 留空即可（相对路径）
  */
 
 const API_CONFIG = {
-  // Cloudflare Workers 后端地址
-  API_BASE: 'https://ai-drama-api.19863435913.workers.dev'
+  // Pages Functions 与前端同域，使用相对路径
+  API_BASE: ''
 };
 
 const API = {
