@@ -1,59 +1,207 @@
-/* 全局样式 - 简约蓝白风格 */
+/* 全局样式 - 极简主义风格 */
 page {
-  background-color: #F5F7FA;
-  color: #333333;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background-color: #FFFFFF;
+  color: #1A1A1A;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  letter-spacing: 0.2px;
+  line-height: 1.6;
 }
 
-/* 玻璃卡片样式 - 浅色版 */
-.glass-card {
+/* 极简卡片样式 */
+.card {
   background: #FFFFFF;
-  border: 1px solid #E8ECF1;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #E8E8E8;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* 渐变按钮 */
-.gradient-btn {
-  background: linear-gradient(135deg, #4A90E2 0%, #5BA0E8 100%);
-  border: none;
-  border-radius: 12px;
+/* 极简按钮样式 */
+.btn {
+  background: #1E3A8A;
   color: #FFFFFF;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 16px;
-  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
 }
 
-.gradient-btn:active {
-  opacity: 0.9;
+.btn:active {
+  background: #1E40AF;
   transform: scale(0.98);
 }
 
-/* 标签样式 */
+.btn-outline {
+  background: transparent;
+  border: 1px solid #1E3A8A;
+  color: #1E3A8A;
+}
+
+.btn-outline:active {
+  background: rgba(30, 58, 138, 0.05);
+}
+
+/* 极简标签样式 */
 .tag {
   display: inline-block;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  margin: 0 8px 8px 0;
+  padding: 4px 8px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .tag-default {
-  background: #F5F7FA;
-  border: 1px solid #E8ECF1;
+  background: #F5F5F5;
   color: #666666;
 }
 
 .tag-active {
-  background: #4A90E2;
-  border: 1px solid #4A90E2;
+  background: #1E3A8A;
   color: #FFFFFF;
 }
 
-/* 区块标题 */
-.section-title {
-  font-size: 16px;
+/* 极简分割线 */
+.divider {
+  height: 1px;
+  background: #E8E8E8;
+  margin: 16px 0;
+}
+
+/* 极简标题 */
+.title {
+  font-size: 20px;
   font-weight: 600;
-  margin-bottom: 12px;
+  color: #1A1A1A;
+  letter-spacing: 0.3px;
+}
+
+.subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666666;
+  letter-spacing: 0.2px;
+}
+
+/* 极简文字 */
+.text {
+  font-size: 14px;
+  color: #1A1A1A;
+  line-height: 1.6;
+}
+
+.text-secondary {
+  color: #666666;
+}
+
+.text-light {
+  color: #999999;
+}
+
+/* 极简间距系统 */
+.spacing-xs {
+  margin: 4px;
+}
+
+.spacing-sm {
+  margin: 8px;
+}
+
+.spacing-md {
+  margin: 16px;
+}
+
+.spacing-lg {
+  margin: 24px;
+}
+
+.spacing-xl {
+  margin: 32px;
+}
+
+/* 极简圆角系统 */
+.radius-sm {
+  border-radius: 2px;
+}
+
+.radius-md {
+  border-radius: 4px;
+}
+
+.radius-lg {
+  border-radius: 8px;
+}
+
+/* 极简阴影系统 */
+.shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-md {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-lg {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 极简动画 */
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 极简网格系统 */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* 极简flex系统 */
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
 }

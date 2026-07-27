@@ -48,195 +48,114 @@ function extractPromptFromAIResult(fullContent) {
   return fullContent;
 }
 
-// 调用豆包 AI 生成漫剧风格提示词（基于图片识别）
-// referenceImages: 风格参考图列表（可选）
-// 返回值：{ fullContent: 完整内容, prompt: 用户看到的漫剧提示词 }
+// 调用豆包 AI 生成视频分镜提示词（基于图片识别）
+// referenceImages: 参考图列表（可选）
+// userPrompt: 用户附加的文字描述（可选）
+// 返回值：{ fullContent: 完整内容, prompt: 用户看到的分镜提示词 }
 function generateAIPrompt(productInfo) {
   return new Promise(async (resolve, reject) => {
-    const { imageSrc, count, referenceImages } = productInfo;
+    const { imageSrc, count, referenceImages, userPrompt } = productInfo;
     
     try {
-      // 将产品图转换为 base64
       const base64ProductImage = await imageToBase64(imageSrc);
-      
-      // 判断是否需要多场景提示词
-      const isMultiScene = count && count >= 2;
-      
-      // 判断是否有参考图
       const hasReferenceImages = referenceImages && referenceImages.length > 0;
-      
-      // 构建消息内容数组（图片+文字）
       const messageContent = [];
       
-      // 添加产品图
+      // 添加所有图片
       messageContent.push({
-        type: 'image_url',
-        image_url: {
-          url: `data:image/jpeg;base64,${base64ProductImage}`
-        }
+        type: 'input_image',
+        image_url: `data:image/jpeg;base64,${base64ProductImage}`
       });
-      
-      // 如果有参考图，添加参考图
       if (hasReferenceImages) {
         for (let i = 0; i < referenceImages.length; i++) {
           const base64RefImage = await imageToBase64(referenceImages[i]);
           messageContent.push({
-            type: 'image_url',
-            image_url: {
-              url: `data:image/jpeg;base64,${base64RefImage}`
-            }
-          });
-        }
-      }
-      
-      // 构建提示词
-      let userMessage = '';
-      
-      if (hasReferenceImages) {
-        // 有参考图时的提示词规则
-        const refCount = referenceImages.length;
-        
-        userMessage = `你是「AI漫剧大师」，一位精通各种AI漫剧风格的创作大师，擅长将普通照片转化为独特的漫剧风格图片。你掌握日系漫画、国风水墨、赛博朋克、像素风、吉卜力风、美漫、韩漫等多种漫剧风格。
-
-现在用户给你上传了1张参考图和${refCount}张风格参考图，请按以下流程处理：
-
-【第一步：识别参考图内容】
-请先识别主参考图中的内容，告诉我这是什么（人物、风景、物品、场景等），识别清楚，不要错误。
-
-【第二步：分析风格参考图】
-${refCount === 1 ? 
-`请仔细分析这张风格参考图的特点：
-- 漫剧风格（如：日系漫画、国风水墨、赛博朋克、像素风、吉卜力风、美漫、韩漫等）
-- 色调氛围（如：暖色调、冷色调、霓虹光、柔和光等）
-- 线条笔触（如：粗线条、细线条、手绘感、厚涂等）
-- 情感基调（如：热血、温馨、暗黑、梦幻、搞笑等）
-- 构图特点（如：特写、全景、仰视、俯视、分镜等）` :
-`请逐张分析这${refCount}张风格参考图的特点，每张都要描述：
-- 漫剧风格（如：日系漫画、国风水墨、赛博朋克、像素风、吉卜力风、美漫、韩漫等）
-- 色调氛围（如：暖色调、冷色调、霓虹光、柔和光等）
-- 线条笔触（如：粗线条、细线条、手绘感、厚涂等）
-- 情感基调（如：热血、温馨、暗黑、梦幻、搞笑等）
-- 构图特点（如：特写、全景、仰视、俯视、分镜等）
-
-然后综合提取这些风格参考图的共同特点和精华元素。`}
-
-【第三步：生成漫剧提示词】
-基于识别出的内容，融合风格参考图的特点，帮我写一套漫剧风格的图片生成提示词。
-
-提示词要求如下：
-- 用中文写，语言生动有画面感
-- 每段指令100到150个字
-- 明确指定漫剧风格类型（如：日系赛璐璐风格、水墨漫画风格等）
-- 包含画面描述：场景、角色、动作、表情、光影、色调
-- 必须明确提到参考了哪些风格图的什么特点
-${isMultiScene ? `
-【套图要求 - 生成${count}张不同场景的漫剧图片】：
-你需要写${count}段完全不一样的漫剧生成指令，每段必须是不同的场景和构图！
-每段都要结合风格参考图的不同特点来生成，可以是同一角色的不同场景，也可以是不同的漫剧片段。
-` : `
-【单图要求】：
-只需要写一段漫剧图片生成指令。
-`}
-
-【输出格式】：
-
-${isMultiScene ? `
-第一张漫剧图片：[详细的漫剧风格生成指令]
-第二张漫剧图片：[详细的漫剧风格生成指令]
-...以此类推，直到第${count}张。
-` : `
-漫剧图片生成指令：[详细的漫剧风格生成指令]
-`}
-
-【重要：输出格式要求】
-请严格按照以下格式输出：
-1. 先输出分析过程（内容识别和风格分析）
-2. 然后输出分隔符 ===ANALYSIS_END===
-3. 然后输出分隔符 ===PROMPT_START===
-4. 然后只输出用户要看到的漫剧提示词部分
-5. 然后输出分隔符 ===PROMPT_END===
-
-用户看到的漫剧提示词部分格式：
-一共要生成N张漫剧图片
-第一张漫剧图片：...
-第二张漫剧图片：...
-...
-
-别写别的，就写识别结果、风格分析和漫剧提示词。`;
-      } else {
-        // 无参考图时的提示词规则
-        userMessage = `你是「AI漫剧大师」，一位精通各种AI漫剧风格的创作大师，擅长将普通照片转化为独特的漫剧风格图片。你掌握日系漫画、国风水墨、赛博朋克、像素风、吉卜力风、美漫、韩漫等多种漫剧风格。
-
-现在用户给你上传了一张图片，请按以下流程处理：
-
-【第一步：识别图片内容】
-请先识别这张图片中的内容，告诉我这是什么（人物、风景、物品、场景等），识别清楚，不要错误。
-
-【第二步：生成漫剧提示词】
-基于识别出的内容，帮我写一套漫剧风格的图片生成提示词。你需要根据内容的特征，自动选择最合适的漫剧风格来生成。
-
-提示词要求如下：
-- 用中文写，语言生动有画面感
-- 每段指令100到150个字
-- 明确指定漫剧风格类型（如：日系赛璐璐风格、水墨漫画风格、赛博朋克漫剧风等）
-- 包含画面描述：场景、角色、动作、表情、光影、色调
-- 风格要匹配内容（如：古风场景配国风水墨，都市场景配赛博朋克等）
-${isMultiScene ? `
-【套图要求 - 生成${count}张不同场景的漫剧图片】：
-你需要写${count}段完全不一样的漫剧生成指令，每段必须是不同的场景、构图和漫剧风格！
-可以尝试不同的漫剧风格混搭，让每张都有独特的视觉效果。
-` : `
-【单图要求】：
-只需要写一段漫剧图片生成指令。
-`}
-
-【输出格式】：
-
-${isMultiScene ? `
-第一张漫剧图片：[详细的漫剧风格生成指令]
-第二张漫剧图片：[详细的漫剧风格生成指令]
-...以此类推，直到第${count}张。
-` : `
-漫剧图片生成指令：[详细的漫剧风格生成指令]
-`}
-
-【重要：输出格式要求】
-请严格按照以下格式输出：
-1. 先输出图片内容识别结果
-2. 然后输出分隔符 ===ANALYSIS_END===
-3. 然后输出分隔符 ===PROMPT_START===
-4. 然后只输出用户要看到的漫剧提示词部分
-5. 然后输出分隔符 ===PROMPT_END===
-
-用户看到的漫剧提示词部分格式：
-一共要生成N张漫剧图片
-第一张漫剧图片：...
-第二张漫剧图片：...
-...
-
-别写别的，就写识别结果和漫剧提示词。`;
-      }
-
-      // 构建 input 数组（图片+文字）
-      const inputArray = [];
-      
-      // 添加图片
-      for (const item of messageContent) {
-        if (item.type === 'image_url') {
-          inputArray.push({
             type: 'input_image',
-            image_url: item.image_url.url
+            image_url: `data:image/jpeg;base64,${base64RefImage}`
           });
         }
       }
-      
-      // 添加文字
-      inputArray.push({
-        type: 'input_text',
-        text: userMessage
-      });
 
-      // 调用豆包大模型（使用 /responses 端点）
+      const sceneCount = count || 4;
+      const refCount = hasReferenceImages ? referenceImages.length : 0;
+
+      const userMessage = `请根据以下图片生成一套${sceneCount}个分镜的视频画面提示词。
+
+═══════════════════════════════════════
+图片分工（非常重要！）：
+- 第1张是「内容主体图」：你要识别这张图的内容，作为分镜的主角
+- ${hasReferenceImages ? `第2张起是「风格参考图」：你只能学习它的画风、色调、光影，绝对不能复制它的画面内容` : '没有额外参考图，风格由你根据内容自动匹配'}
+═══════════════════════════════════════
+
+【第一步：识别内容主体图】
+仔细识别第1张图片，回答：
+- 这是什么？（产品/人物/食物/动物/场景等）
+- 主体有什么特征？（颜色、形状、材质、造型）
+- 背景是什么？（室内/室外/纯色/虚化）
+- 整体什么氛围？（高级/可爱/科技/自然）
+
+【第二步：提取风格基因】
+${hasReferenceImages ? `${refCount === 1 ?
+`分析这张风格参考图，只提取以下风格要素：
+- 画风类型（如：水墨风、赛博朋克、吉卜力、像素风、扁平插画、写实摄影等）
+- 色调特征（如：暖黄调、冷蓝调、霓虹色、莫兰迪色等）
+- 光影效果（如：逆光剪影、柔光漫射、硬光投影、霓虹光效等）
+- 画面质感（如：厚涂质感、线稿感、磨砂质感、胶片颗粒等）
+- 情感调性（如：热血燃、治愈暖、暗黑酷、梦幻柔等）
+
+⚠️ 只提取风格DNA，不要描述参考图中的具体内容！` :
+`逐张分析这${refCount}张风格参考图，每张都提取：
+- 画风类型
+- 色调特征
+- 光影效果
+- 画面质感
+- 情感调性
+然后综合所有参考图，提炼出一套统一的风格基因。`}` :
+ '根据内容主体的特征，自动匹配最合适的视觉风格。'}
+
+【第三步：创作全新分镜提示词】
+现在你要用「内容主体图」的内容 + 提取的「风格基因」，创作一套全新的${sceneCount}个分镜。
+
+🚨 核心规则（必须遵守）：
+1. 分镜的主角是「内容主体图」中的产品/主体，不是参考图中的内容
+2. 参考图的风格基因（画风、色调、光影、质感）要融入每个分镜
+3. 场景、动作、构图必须是全新创作，不要复刻任何一张参考图的画面
+4. 每个分镜描述的是同一个主体在不同场景/角度/动作下的画面
+
+分镜要求：
+- 每段80-120字，中文描述，生动有画面感
+- ${sceneCount}个分镜有起承转合的叙事
+- 视觉风格统一（同一套色调、画风、氛围）
+- 每个分镜有不同的景别和角度变化
+- 适合竖屏短视频（9:16）
+
+叙事结构：
+- 分镜1：开场引入（吸引注意力）
+- 分镜2~${sceneCount - 1}：内容展开（多角度展示）
+- 分镜${sceneCount}：结尾高潮（留有余韵）
+
+${userPrompt ? `用户的补充描述：${userPrompt}\n请将用户的描述融入分镜创意中。` : ''}
+
+【输出格式】（严格遵守）
+1. 简短识别结果（2-3句）
+2. ===ANALYSIS_END===
+3. ===PROMPT_START===
+4. 分镜提示词
+5. ===PROMPT_END===
+
+分镜提示词格式：
+共${sceneCount}个分镜画面
+分镜1：[画面描述]
+分镜2：[画面描述]
+...
+分镜${sceneCount}：[画面描述]
+
+只写识别结果和分镜提示词，不要写别的。`;
+
+      messageContent.push({ type: 'input_text', text: userMessage });
+      
+      console.log('[分镜生成] 发送请求...');
+      
       wx.request({
         url: `${API_CONFIG.doubao.baseUrl}/responses`,
         method: 'POST',
@@ -245,18 +164,12 @@ ${isMultiScene ? `
           'Authorization': `Bearer ${API_CONFIG.doubao.apiKey}`
         },
         data: {
-          model: API_CONFIG.doubao.model,
-          input: [
-            {
-              role: 'user',
-              content: inputArray
-            }
-          ]
-        },
-        success: (res) => {
-          console.log('豆包API响应:', JSON.stringify(res.data));
+        model: API_CONFIG.doubao.model,
+        input: [{ role: 'user', content: messageContent }]
+      },
+      success: (res) => {
+        console.log('[分镜生成] 响应:', JSON.stringify(res.data));
           if (res.statusCode === 200 && res.data.output) {
-            // 从 output 中提取文本内容
             let fullContent = '';
             for (const item of res.data.output) {
               if (item.type === 'message' && item.content) {
@@ -268,22 +181,19 @@ ${isMultiScene ? `
                 }
               }
             }
-            
             if (fullContent) {
-              // 提取用户看到的提示词部分
               const prompt = extractPromptFromAIResult(fullContent);
-              // 返回完整内容和提取的提示词
               resolve({ fullContent, prompt });
             } else {
-              reject(new Error('AI生成失败: 未获取到文本内容'));
+              reject(new Error('AI未返回内容'));
             }
           } else {
-            console.log('响应数据:', JSON.stringify(res.data));
-            reject(new Error(`AI生成失败: ${JSON.stringify(res.data)}`));
+            const errMsg = res.data && res.data.error ? res.data.error.message : JSON.stringify(res.data);
+            reject(new Error('分镜生成失败: ' + errMsg));
           }
         },
         fail: (err) => {
-          reject(err);
+          reject(new Error('网络请求失败: ' + (err.errMsg || '未知错误')));
         }
       });
     } catch (error) {
@@ -292,19 +202,114 @@ ${isMultiScene ? `
   });
 }
 
-// 调用豆包 Seedream 生成图片（图生图）
-// imageSrc: 产品图路径
+// 纯文字生成视频分镜提示词（无图片）
+function generateAIPromptFromText(productInfo) {
+  return new Promise((resolve, reject) => {
+    const { userPrompt, count } = productInfo;
+    const sceneCount = count || 4;
+
+    const userMessage = `请根据以下文字描述生成一套${sceneCount}个分镜的视频画面提示词。
+
+用户描述：${userPrompt}
+
+请按以下要求生成：
+
+【分镜要求】
+- 共${sceneCount}个分镜，构成一段完整的短视频叙事
+- 每个分镜是一段完整的画面描述，用中文写，语言生动有画面感
+- 每段描述80到120个字
+- ${sceneCount}个分镜要有起承转合，画面有变化
+- 自动选择最合适的画面风格和色调
+- 适合竖屏短视频比例（9:16）
+
+分镜叙事结构：
+- 第1个分镜：开场/引入（全景或特写，吸引注意力）
+- 第2-${sceneCount - 1}个分镜：内容展开（不同角度展示细节、场景变化）
+- 最后一个分镜：结尾/高潮（留有余韵或行动号召）
+
+【输出格式】
+请严格按照以下格式输出：
+1. 先输出一段简短的创意说明（2-3句话，说明整体方向）
+2. 然后输出分隔符 ===ANALYSIS_END===
+3. 然后输出分隔符 ===PROMPT_START===
+4. 然后只输出用户要看到的分镜提示词
+5. 然后输出分隔符 ===PROMPT_END===
+
+用户看到的分镜提示词格式：
+共${sceneCount}个分镜画面
+分镜1：[详细画面描述]
+分镜2：[详细画面描述]
+...
+分镜${sceneCount}：[详细画面描述]
+
+不要写别的，就写创意说明和分镜提示词。`;
+
+    wx.request({
+      url: `${API_CONFIG.doubao.baseUrl}/responses`,
+      method: 'POST',
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_CONFIG.doubao.apiKey}`
+      },
+      data: {
+        model: API_CONFIG.doubao.model,
+        input: [{ role: 'user', content: [{ type: 'input_text', text: userMessage }] }]
+      },
+      success: (res) => {
+        if (res.statusCode === 200 && res.data.output) {
+          let fullContent = '';
+          for (const item of res.data.output) {
+            if (item.type === 'message' && item.content) {
+              for (const content of item.content) {
+                if (content.type === 'output_text') {
+                  fullContent = content.text.trim();
+                  break;
+                }
+              }
+            }
+          }
+          if (fullContent) {
+            const prompt = extractPromptFromAIResult(fullContent);
+            resolve({ fullContent, prompt });
+          } else {
+            reject(new Error('AI未返回内容'));
+          }
+        } else {
+          const errMsg = res.data && res.data.error ? res.data.error.message : JSON.stringify(res.data);
+          reject(new Error('分镜生成失败: ' + errMsg));
+        }
+      },
+      fail: (err) => {
+        reject(new Error('网络请求失败: ' + (err.errMsg || '未知错误')));
+      }
+    });
+  });
+}
+
+// 调用豆包 Seedream 生成图片（图生图 / 文生图）
+// imageSrc: 产品图路径（可为null）
 // referenceImages: 参考图路径数组（可选）
 function generateImage(prompt, count, imageSrc, referenceImages) {
   return new Promise(async (resolve, reject) => {
     try {
-      // 将产品图转换为 base64
-      const base64ProductImage = await imageToBase64(imageSrc);
+      // 兼容对象传参（chat.js _chatReply 传入了 {prompt, count}）
+      if (typeof prompt === 'object' && prompt !== null && !Array.isArray(prompt)) {
+        imageSrc = prompt.imageSrc || null;
+        referenceImages = prompt.referenceImages || null;
+        count = prompt.count;
+        prompt = prompt.prompt;
+      }
+
+      // 构建图片数组
+      const imageArray = [];
       
-      // 构建图片数组（产品图 + 参考图）
-      const imageArray = [`data:image/jpeg;base64,${base64ProductImage}`];
+      // 添加产品图（如果有）
+      if (imageSrc) {
+        const base64ProductImage = await imageToBase64(imageSrc);
+        imageArray.push(`data:image/jpeg;base64,${base64ProductImage}`);
+      }
       
-      // 添加参考图
+      // 添加参考图（如果有）
       if (referenceImages && referenceImages.length > 0) {
         for (const refImage of referenceImages) {
           if (refImage) {
@@ -313,6 +318,8 @@ function generateImage(prompt, count, imageSrc, referenceImages) {
           }
         }
       }
+
+      const hasImages = imageArray.length > 0;
       
       // 构建带图片说明的提示词
       let promptWithImageInfo = '';
@@ -321,32 +328,70 @@ function generateImage(prompt, count, imageSrc, referenceImages) {
       if (hasReferenceImages) {
         // 有参考图时，明确告诉模型哪张是产品图，哪张是参考图
         promptWithImageInfo = `【图片说明】
-第1张图片是产品图（需要生成的主体商品）
-${referenceImages.map((_, i) => `第${i + 2}张图片是参考图（参考其风格、构图、场景等）`).join('\n')}
+第1张图片是产品/主题图（需要展示的主体对象）
+${referenceImages.map((_, i) => `第${i + 2}张图片是风格参考（仅借鉴其画风、色调、光影，禁止复制其内容）`).join('\n')}
 
-【生成要求】
+【生成规则】
+🚨 严禁复制参考图的画面内容！必须根据以下提示词全新创作：
+- 参考图只用来学习画风和色调
+- 画面内容必须100%根据提示词描述来生成
+- 生成的图片中不要出现参考图中的人物、场景、动作
+
+【提示词】
 ${prompt}`;
       } else {
         promptWithImageInfo = prompt;
       }
       
-      // 构建请求数据 - 使用豆包 Seedream 图生图 API
+      // 清理提示词中的特殊字符（Seedream API 不接受特殊符号）
+      // 有参考图时，提取【提示词】后面的内容；无参考图时直接用 prompt
+      let cleanPromptText = '';
+      const promptStr = String(prompt || '');
+      
+      if (hasReferenceImages) {
+        const promptSectionMatch = promptWithImageInfo.match(/【提示词】\s*([\s\S]*)$/);
+        cleanPromptText = promptSectionMatch ? String(promptSectionMatch[1]).trim() : promptStr;
+      } else {
+        cleanPromptText = promptStr;
+      }
+      
+      cleanPromptText = cleanPromptText
+        .replace(/[【】]/g, '')    // 去掉方括号
+        .replace(/[🚨⚠️💡✨🎯🔥❤️⚡🌟💫🎭🎬📸🎨]/g, '')  // 去掉emoji
+        .replace(/\n+/g, '，')     // 换行替换为逗号
+        .replace(/，+/g, '，')     // 合并连续逗号
+        .replace(/^[\d]+[个、]/, '') // 去掉开头的"共X个"数字
+        .trim();
+      
+      // 确保提示词非空
+      if (!cleanPromptText || cleanPromptText.length < 2) {
+        cleanPromptText = promptStr || '请生成一张图片';
+      }
+      
+      console.log('[生图] 最终提示词:', cleanPromptText.substring(0, 100) + '...');
+      
+      // 构建请求数据 - 使用豆包 Seedream API
       const requestData = {
         model: API_CONFIG.seedream.model,
-        prompt: promptWithImageInfo,
-        image: imageArray.length === 1 ? imageArray[0] : imageArray, // 单张传字符串，多张传数组
+        prompt: cleanPromptText,
         response_format: 'url',
         size: '2K',
-        stream: false,
         watermark: true
       };
 
-      // 如果需要生成多张图片，添加 sequential_image_generation 配置
+      // 有图片时使用图生图，无图片时使用文生图
+      if (hasImages) {
+        requestData.image = imageArray.length === 1 ? imageArray[0] : imageArray;
+      }
+
+      // 多图序列化生成配置
       if (count && count >= 2) {
         requestData.sequential_image_generation = 'auto';
-        requestData.sequential_image_generation_options = {
-          max_images: count
-        };
+        requestData.sequential_image_generation_options = { max_images: count };
+        requestData.stream = true;
+      } else {
+        requestData.sequential_image_generation = 'disabled';
+        requestData.stream = false;
       }
 
       console.log('调用豆包 Seedream API...');
@@ -512,9 +557,77 @@ function selectAndCheckImage(options = {}) {
   });
 }
 
+// 豆包大模型纯文字对话
+// messages: 对话历史 [{ role: 'user'|'assistant', content: '...' }]
+// systemPrompt: 系统提示词（可选）
+function chatWithAI(messages, systemPrompt) {
+  return new Promise((resolve, reject) => {
+    // 构建 input 数组
+    const inputArray = [];
+
+    // 添加系统提示词
+    if (systemPrompt) {
+      inputArray.push({
+        role: 'system',
+        content: systemPrompt
+      });
+    }
+
+    // 添加对话历史
+    for (const msg of messages) {
+      inputArray.push({
+        role: msg.role === 'ai' ? 'assistant' : 'user',
+        content: msg.text || ''
+      });
+    }
+
+    wx.request({
+      url: `${API_CONFIG.doubao.baseUrl}/responses`,
+      method: 'POST',
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_CONFIG.doubao.apiKey}`
+      },
+      data: {
+        model: API_CONFIG.doubao.model,
+         input: inputArray
+      },
+      success: (res) => {
+        console.log('[AI对话] 响应:', JSON.stringify(res.data));
+        if (res.statusCode === 200 && res.data.output) {
+          let reply = '';
+          for (const item of res.data.output) {
+            if (item.type === 'message' && item.content) {
+              for (const content of item.content) {
+                if (content.type === 'output_text') {
+                  reply = content.text.trim();
+                  break;
+                }
+              }
+            }
+          }
+          if (reply) {
+            resolve(reply);
+          } else {
+            reject(new Error('AI未返回回复'));
+          }
+        } else {
+          const errMsg = res.data && res.data.error ? res.data.error.message : JSON.stringify(res.data);
+          reject(new Error('对话失败: ' + errMsg));
+        }
+      },
+      fail: (err) => {
+        reject(new Error('网络请求失败: ' + (err.errMsg || '未知错误')));
+      }
+    });
+  });
+}
+
 module.exports = {
   generateAIPrompt,
+  generateAIPromptFromText,
   generateImage,
+  chatWithAI,
   checkImageSecurity,
   checkTextSecurity,
   selectAndCheckImage

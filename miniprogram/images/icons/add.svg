@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+  <!-- 横线 -->
+  <line x1="4" y1="10" x2="16" y2="10" stroke="#8B7355" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- 竖线 -->
+  <line x1="10" y1="4" x2="10" y2="16" stroke="#8B7355" stroke-width="2" stroke-linecap="round"/>
+</svg>

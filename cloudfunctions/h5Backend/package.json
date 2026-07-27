@@ -1,0 +1,9 @@
+{
+  "name": "h5Backend",
+  "version": "1.0.0",
+  "description": "H5 backend - AI proxy + user management",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.4.0"
+  }
+}

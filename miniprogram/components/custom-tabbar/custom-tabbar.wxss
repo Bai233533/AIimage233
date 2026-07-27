@@ -1,0 +1,100 @@
+.tabbar-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 1000;
+}
+
+.tabbar-content {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 56px;
+}
+
+.tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.tabbar-icon-wrap {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  margin-bottom: 4px;
+}
+
+.tabbar-icon {
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease;
+  z-index: 2;
+  position: relative;
+}
+
+.tabbar-icon-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 40px;
+  height: 40px;
+  background: rgba(30, 58, 138, 0.1);
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.tabbar-item.active .tabbar-icon-bg {
+  transform: translate(-50%, -50%) scale(1);
+  background: rgba(30, 58, 138, 0.15);
+}
+
+.tabbar-item.active .tabbar-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 4px rgba(30, 58, 138, 0.3));
+}
+
+.tabbar-text {
+  font-size: 10px;
+  color: #999999;
+  transition: all 0.3s ease;
+  letter-spacing: 0.2px;
+}
+
+.tabbar-item.active .tabbar-text {
+  color: #1E3A8A;
+  font-weight: 500;
+}
+
+/* 选中时的动画效果 */
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.tabbar-item.active .tabbar-icon-bg {
+  animation: pulse 0.4s ease-out;
+}

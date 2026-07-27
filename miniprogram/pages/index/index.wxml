@@ -1,231 +1,89 @@
-<view class="container">
-  <!-- 聊天消息区域 -->
-  <scroll-view 
-    class="chat-area" 
-    scroll-y 
-    scroll-into-view="{{scrollToMsg}}"
-    scroll-with-animation
-    enhanced
-    show-scrollbar="{{false}}"
-  >
-    <!-- 欢迎消息 -->
-    <view class="message-wrapper ai-msg-wrapper" wx:if="{{messages.length === 0}}">
-      <view class="bubble ai-bubble welcome-bubble">
-        <text class="bubble-text">你好！我是AI漫剧生成大师，上传参考图并输入提示词，我来帮你生成精彩的AI漫剧作品～</text>
+<view class="page">
+  <!-- 自定义顶部栏 -->
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-bar-inner" style="height: {{navBarHeight}}px;">
+      <text class="nav-title">对话</text>
+      <view class="nav-actions">
+        <view class="nav-action-btn" bindtap="onNewChat">
+          <text class="nav-action-icon">+</text>
+        </view>
       </view>
     </view>
+  </view>
 
-    <!-- 消息列表 -->
-    <block wx:for="{{messages}}" wx:key="id">
-      <!-- 用户消息 -->
-      <view class="message-wrapper user-msg-wrapper" wx:if="{{item.role === 'user'}}" id="msg-{{item.id}}">
-        <!-- 用户图片 -->
-        <view class="user-images-full" wx:if="{{item.images && item.images.length > 0}}">
-          <image 
-            class="user-chat-image-full" 
-            wx:for="{{item.images}}" 
-            wx:for-item="img" 
-            wx:key="*this" 
-            src="{{img}}" 
-            mode="aspectFill" 
-            bindtap="previewImage" 
-            data-src="{{img}}"
-          />
-        </view>
-        <!-- 用户文字消息 -->
-        <view class="user-text-row" wx:if="{{item.text}}">
-          <view class="bubble user-bubble">
-            <text class="bubble-text">{{item.text}}</text>
-          </view>
-        </view>
+  <!-- 对话列表 -->
+  <scroll-view class="chat-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{conversations.length === 0}}">
+      <view class="empty-icon-wrap">
+        <text class="empty-icon">💬</text>
       </view>
+      <text class="empty-title">暂无对话</text>
+      <text class="empty-desc">点击右上角 + 开始新的 AI 创作</text>
+    </view>
 
-      <!-- AI消息 -->
-      <view class="ai-msg-block" wx:if="{{item.role === 'ai'}}" id="msg-{{item.id}}">
-        <!-- AI思考过程 -->
-        <view class="thinking-row" wx:if="{{item.thinking}}">
-          <view class="thinking-content">
-            <view class="thinking-dots">
-              <view class="dot dot1"></view>
-              <view class="dot dot2"></view>
-              <view class="dot dot3"></view>
-            </view>
-            <text class="thinking-text">{{item.thinkingText || '正在思考中...'}}</text>
-          </view>
-        </view>
-        <!-- AI文字回复（在图片上方） -->
-        <view class="ai-text-row" wx:if="{{item.text && !item.thinking}}">
-          <text class="ai-plain-text">{{item.text}}</text>
-        </view>
-        <!-- AI生成的图片（在文字下方） -->
-        <view class="ai-images-full" wx:if="{{item.images && item.images.length > 0 && !item.thinking}}">
-          <view class="ai-image-grid-full grid-{{item.images.length > 2 ? 'multi' : item.images.length}}">
-            <image 
-              class="ai-generated-image-full" 
-              wx:for="{{item.images}}" 
-              wx:for-item="img" 
-              wx:key="url" 
-              src="{{img.url}}" 
-              mode="aspectFill" 
-              bindtap="previewImage" 
-              data-src="{{img.url}}"
-            />
-          </view>
-        </view>
-        <!-- 操作按钮 -->
-        <view class="ai-actions-full" wx:if="{{item.images && item.images.length > 0 && !item.thinking}}">
-          <view class="ai-action-btn" bindtap="saveImages" data-msg-id="{{item.id}}">
-            <text>保存图片</text>
-          </view>
-        </view>
+    <!-- 对话条目 -->
+    <view 
+      class="chat-item" 
+      wx:for="{{conversations}}" 
+      wx:key="id"
+      bindtap="onOpenChat"
+      bindlongpress="onLongPress"
+      data-id="{{item.id}}"
+      data-index="{{index}}"
+    >
+      <view class="chat-item-avatar" style="background: {{item.color}};">
+        <text class="chat-item-avatar-text">{{item.avatarText}}</text>
       </view>
-    </block>
-
-    <!-- 占位，确保底部有足够空间（输入栏固定，需预留高度） -->
-    <view class="bottom-placeholder" id="bottom"></view>
+      <view class="chat-item-content">
+        <view class="chat-item-top">
+          <text class="chat-item-title">{{item.title}}</text>
+          <text class="chat-item-time">{{item.timeDisplay}}</text>
+        </view>
+        <text class="chat-item-summary">{{item.summary || '暂无消息'}}</text>
+      </view>
+      <view class="chat-item-unread" wx:if="{{item.unread}}">
+        <text class="unread-dot"></text>
+      </view>
+    </view>
   </scroll-view>
 
-  <!-- 底部操作区域（固定定位） -->
-  <view class="input-area">
-    <!-- 参考图预览区 -->
-    <view class="reference-preview" wx:if="{{referenceImages.length > 0}}">
-      <view class="reference-preview-list">
-        <view class="reference-preview-item" wx:for="{{referenceImages}}" wx:key="index">
-          <image class="reference-preview-img" src="{{item}}" mode="aspectFill" />
-          <view class="reference-preview-remove" data-index="{{index}}" bindtap="removeReferenceImage">×</view>
-        </view>
-        <view class="reference-preview-item reference-preview-add" wx:if="{{referenceImages.length < 3}}" bindtap="addReferenceImage">
-          <text class="reference-add-icon">+</text>
-        </view>
-      </view>
-      <view class="reference-tip">
-        <text class="tip-icon">💡</text>
-        <text class="tip-text">上传参考图 + 输入提示词，效果更佳</text>
-      </view>
-    </view>
+  <!-- 底部导航栏占位 -->
+  <view class="tab-bar-placeholder"></view>
+</view>
 
-    <!-- 快捷操作栏 -->
-    <view class="quick-actions">
-      <scroll-view scroll-x class="quick-actions-scroll" enhanced show-scrollbar="{{false}}">
-        <view class="quick-actions-inner">
-          <!-- 生成数量 -->
-          <view class="quick-action-btn {{showCountPicker ? 'active' : ''}}" bindtap="toggleCountPicker">
-            <text class="quick-icon">🖼️</text>
-            <text class="quick-label">{{generateCounts[generateCount]}}</text>
-          </view>
-          <!-- AI生成提示词 -->
-          <view class="quick-action-btn {{generatingPrompt ? 'loading' : ''}}" bindtap="onGenerateAIPrompt">
-            <text class="quick-icon">✨</text>
-            <text class="quick-label">{{generatingPrompt ? '生成中...' : 'AI生成提示词'}}</text>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
-    <!-- 数量选择器（展开时） -->
-    <view class="count-picker" wx:if="{{showCountPicker}}">
-      <view 
-        class="count-option {{generateCount === index ? 'count-active' : ''}}" 
-        wx:for="{{generateCounts}}" 
-        wx:key="index" 
-        data-index="{{index}}" 
-        bindtap="selectCount"
-      >
-        {{item}}
-      </view>
-    </view>
-
-    <!-- 输入栏 -->
-    <view class="chat-input-bar">
-      <!-- 左侧拍照按钮（无内容时显示） -->
-      <view class="input-camera" wx:if="{{!inputText && referenceImages.length === 0}}" bindtap="takePhoto">
-        <text class="camera-icon">📷</text>
-      </view>
-      <!-- 中间输入框 -->
-      <view class="input-field-wrap">
-        <textarea 
-          class="chat-input" 
-          placeholder="发消息..." 
-          placeholderStyle="color: #BBBBBB" 
-          value="{{inputText}}" 
-          bindinput="onInput" 
-          bindconfirm="sendMessage"
-          confirm-type="send"
-          adjust-position="{{true}}"
-          cursor-spacing="12"
-          auto-height
-          maxlength="2000"
-          show-confirm-bar="{{false}}"
-        />
-      </view>
-      <!-- 右侧加号按钮（无内容时显示） -->
-      <view class="input-plus" wx:if="{{!inputText && referenceImages.length === 0}}" bindtap="onPlusAction">
-        <text class="plus-icon">➕</text>
-      </view>
-      <!-- 发送按钮（有内容时显示） -->
-      <view class="input-send" wx:if="{{inputText || referenceImages.length > 0}}" bindtap="sendMessage">
-        <view class="send-arrow"></view>
-      </view>
-    </view>
+<!-- 长按菜单弹窗 -->
+<view class="menu-mask" wx:if="{{showMenu}}" bindtap="hideMenu"></view>
+<view class="menu-sheet {{showMenu ? 'show' : ''}}">
+  <view class="menu-sheet-item" bindtap="onPinConversation">
+    <text class="menu-icon">📌</text>
+    <text>{{targetConversation.pinned ? '取消置顶' : '置顶对话'}}</text>
   </view>
-</view>
-
-<!-- 图片选择弹窗 -->
-<view class="action-sheet-mask" wx:if="{{showActionSheet}}" bindtap="hideActionSheet"></view>
-<view class="action-sheet {{showActionSheet ? 'show' : ''}}">
-  <view class="action-sheet-title">选择图片</view>
-  <view class="action-sheet-item" bindtap="takePhoto">
-    <text class="action-icon">📷</text>
-    <text>拍照</text>
+  <view class="menu-sheet-item" bindtap="onRenameConversation">
+    <text class="menu-icon">✏️</text>
+    <text>重命名</text>
   </view>
-  <view class="action-sheet-item" bindtap="chooseFromAlbum">
-    <text class="action-icon">🖼️</text>
-    <text>从相册选择</text>
+  <view class="menu-sheet-item menu-danger" bindtap="onDeleteConversation">
+    <text class="menu-icon">🗑️</text>
+    <text>删除对话</text>
   </view>
-  <view class="action-sheet-cancel" bindtap="hideActionSheet">取消</view>
+  <view class="menu-sheet-cancel" bindtap="hideMenu">取消</view>
 </view>
 
-<!-- 会员状态提示条 -->
-<view class="member-bar" wx:if="{{!isMember && isLoggedIn}}">
-  <text class="member-bar-text">免费次数：{{freeLimit - freeUsed}}/{{freeLimit}} 剩余</text>
-  <view class="member-bar-btn" bindtap="showCardKey">开通会员</view>
-</view>
-<view class="member-bar member-bar-active" wx:if="{{isMember}}">
-  <text class="member-bar-text">会员有效至 {{expireTime}}</text>
-</view>
-<view class="member-bar" wx:if="{{!isLoggedIn}}">
-  <text class="member-bar-text">免费体验 {{freeLimit - freeUsed}} 次</text>
-  <view class="member-bar-btn" bindtap="showLogin">登录解锁无限次</view>
-</view>
-
-<!-- 登录弹窗 -->
-<view class="modal-mask" wx:if="{{showLoginModal}}" bindtap="hideLogin"></view>
-<view class="login-modal {{showLoginModal ? 'show' : ''}}">
-  <view class="login-modal-title">登录</view>
-  <view class="login-modal-desc">授权手机号即可登录，享受无限次生成</view>
-  <button class="login-phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
-    <text class="login-phone-icon">📱</text>
-    <text>手机号快捷登录</text>
-  </button>
-  <view class="login-cardkey-link" bindtap="showCardKey">已有卡密？点击兑换</view>
-  <view class="login-modal-close" bindtap="hideLogin">取消</view>
-</view>
-
-<!-- 卡密兑换弹窗 -->
-<view class="modal-mask" wx:if="{{showCardKeyModal}}" bindtap="hideCardKey"></view>
-<view class="cardkey-modal {{showCardKeyModal ? 'show' : ''}}">
-  <view class="login-modal-title">卡密兑换</view>
-  <view class="login-modal-desc">输入卡密，兑换1个月会员</view>
+<!-- 重命名弹窗 -->
+<view class="modal-mask fade-in" wx:if="{{showRenameModal}}" bindtap="hideRenameModal"></view>
+<view class="rename-modal {{showRenameModal ? 'show' : ''}}">
+  <view class="rename-modal-title">重命名对话</view>
   <input 
-    class="cardkey-input" 
-    placeholder="请输入卡密，如 VIP-AB3D-K9F2" 
-    value="{{cardKeyInput}}" 
-    bindinput="onCardKeyInput"
+    class="rename-input" 
+    placeholder="请输入新名称" 
+    value="{{renameValue}}" 
+    bindinput="onRenameInput"
     placeholderStyle="color: #BBBBBB"
+    focus="{{showRenameModal}}"
   />
-  <view class="cardkey-confirm-btn" bindtap="onVerifyCardKey">确认兑换</view>
-  <view class="login-modal-close" bindtap="hideCardKey">取消</view>
+  <view class="rename-modal-btns">
+    <view class="rename-btn rename-cancel" bindtap="hideRenameModal">取消</view>
+    <view class="rename-btn rename-confirm" bindtap="onConfirmRename">确认</view>
+  </view>
 </view>
-
-<!-- 生成提示弹窗 -->
-<generate-modal visible="{{showModal}}" mode="{{modalMode}}" message="{{modalMessage}}" bind:confirm="onModalConfirm" bind:view="onModalView" />

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- 闪电形状 -->
+  <path d="M28 8L20 24H28L20 40L32 20H24L28 8Z" fill="url(#gradient)" stroke="#8B7355" stroke-width="2" stroke-linejoin="round"/>
+  
+  <!-- 渐变定义 -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B7355"/>
+      <stop offset="100%" stop-color="#F8F6F4"/>
+    </linearGradient>
+  </defs>
+</svg>

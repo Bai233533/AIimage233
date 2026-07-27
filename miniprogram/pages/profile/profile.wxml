@@ -1,93 +1,122 @@
 <view class="profile-page">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-bar-inner" style="height: {{navBarHeight}}px;">
+      <text class="nav-title">我的</text>
+    </view>
+  </view>
+
   <!-- 用户信息卡片 -->
   <view class="user-card">
-    <view class="user-avatar-large">
-      <view class="avatar-ring {{isMember ? 'ring-member' : ''}}">
-        <text class="avatar-emoji">👤</text>
+    <view class="user-avatar-wrap">
+      <view class="user-avatar {{isMember ? 'avatar-member' : ''}}">
+        <text class="avatar-text">{{isLoggedIn ? username[0] || '用' : '?'}}</text>
       </view>
     </view>
     <view class="user-info">
-      <text class="user-phone">{{isLoggedIn ? phone : '未登录'}}</text>
-      <view class="user-tag {{isMember ? 'tag-member' : 'tag-free'}}">
-        <text>{{isMember ? '会员用户' : '免费用户'}}</text>
+      <text class="user-name">{{isLoggedIn ? username : '未登录'}}</text>
+      <view class="user-badge {{isMember ? 'badge-member' : 'badge-free'}}">
+        <text class="badge-text">{{isMember ? '会员用户' : '免费用户'}}</text>
       </view>
     </view>
   </view>
 
   <!-- 会员状态 -->
-  <view class="section">
-    <view class="section-title">会员状态</view>
-    <view class="status-card {{isMember ? 'status-active' : 'status-inactive'}}">
-      <view class="status-row">
-        <text class="status-label">{{isMember ? '会员有效至' : '当前状态'}}</text>
-        <text class="status-value">{{isMember ? expireTime : '未开通'}}</text>
-      </view>
-      <view class="status-row" wx:if="{{!isMember && isLoggedIn}}">
-        <text class="status-label">剩余免费次数</text>
-        <text class="status-value">{{freeLimit - freeUsed}}/{{freeLimit}}</text>
-      </view>
-      <view class="status-row" wx:if="{{!isLoggedIn}}">
-        <text class="status-label">剩余免费次数</text>
-        <text class="status-value">{{freeLimit - freeUsed}}/{{freeLimit}}</text>
-      </view>
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-label">会员状态</text>
+    </view>
+    <view class="status-row">
+      <text class="status-key">{{isMember ? '有效期至' : '当前状态'}}</text>
+      <text class="status-val {{isMember ? 'val-active' : ''}}">{{isMember ? expireTime : '未开通'}}</text>
+    </view>
+    <view class="status-row">
+      <text class="status-key">剩余次数</text>
+      <text class="status-val">{{isMember ? '无限次' : (freeLimit - freeUsed) + '/' + freeLimit}}</text>
     </view>
   </view>
 
   <!-- 操作列表 -->
-  <view class="section">
-    <view class="section-title">操作</view>
-
-    <!-- 登录（未登录时显示） -->
-    <view class="menu-item" wx:if="{{!isLoggedIn}}" bindtap="onLogin">
-      <text class="menu-icon">📱</text>
-      <text class="menu-label">手机号登录</text>
+  <view class="section-card">
+    <view class="menu-item" bindtap="showLoginModalAction">
+      <view class="menu-left">
+        <text class="menu-icon">�</text>
+        <text class="menu-text">{{isLoggedIn ? '账号信息' : '账号密码登录'}}</text>
+      </view>
       <text class="menu-arrow">›</text>
     </view>
-
-    <!-- 卡密兑换 -->
-    <view class="menu-item" bindtap="showCardKeyInput">
-      <text class="menu-icon">🎫</text>
-      <text class="menu-label">卡密兑换</text>
+    <view class="menu-item" bindtap="onCardKeyTap">
+      <view class="menu-left">
+        <text class="menu-icon">🎫</text>
+        <text class="menu-text">卡密兑换</text>
+      </view>
       <text class="menu-arrow">›</text>
     </view>
-
-    <!-- 退出登录 -->
-    <view class="menu-item menu-danger" wx:if="{{isLoggedIn}}" bindtap="onLogout">
-      <text class="menu-icon">🚪</text>
-      <text class="menu-label">退出登录</text>
+    <view class="menu-item menu-last" wx:if="{{isLoggedIn}}" bindtap="onLogout">
+      <view class="menu-left">
+        <text class="menu-icon">🚪</text>
+        <text class="menu-text danger-text">退出登录</text>
+      </view>
       <text class="menu-arrow">›</text>
     </view>
   </view>
 
-  <!-- 卡密输入区（展开时） -->
-  <view class="cardkey-section" wx:if="{{showCardKey}}">
-    <view class="cardkey-title">输入卡密</view>
-    <view class="cardkey-form">
-      <input 
-        class="cardkey-input" 
-        placeholder="请输入卡密，如 VIP-AB3D-K9F2" 
-        value="{{cardKeyInput}}" 
-        bindinput="onCardKeyInput"
-        placeholderStyle="color: #BBBBBB"
-      />
-      <view class="cardkey-btn" bindtap="onVerifyCardKey">确认兑换</view>
-    </view>
+  <!-- 版本号 -->
+  <view class="footer">
+    <text class="footer-text">AI漫剧大师 v1.0</text>
   </view>
 
-  <!-- 底部版本信息 -->
-  <view class="version-info">
-    <text>AI漫剧大师 v1.0</text>
+  <!-- TabBar 占位 -->
+  <view class="tab-bar-placeholder"></view>
+</view>
+
+<!-- ========== 账号密码登录弹窗 ========== -->
+<view class="modal-mask {{showLoginModal ? 'fade-in' : ''}}" wx:if="{{showLoginModal}}" bindtap="hideLoginModal"></view>
+<view class="modal-center {{showLoginModal ? 'pop-in' : ''}}" wx:if="{{showLoginModal}}">
+  <view class="modal-card">
+    <!-- 登录/注册切换标签 -->
+    <view class="modal-tabs">
+      <view class="modal-tab {{loginMode === 'login' ? 'tab-active' : ''}}" bindtap="switchToLogin">登录</view>
+      <view class="modal-tab {{loginMode === 'register' ? 'tab-active' : ''}}" bindtap="switchToRegister">注册</view>
+    </view>
+
+    <!-- 登录表单 -->
+    <block wx:if="{{loginMode === 'login'}}">
+      <view class="modal-form">
+        <input class="modal-input" placeholder="请输入账号" value="{{loginUsername}}" bindinput="onLoginUsernameInput" placeholderStyle="color: #BBBBBB" />
+        <input class="modal-input" placeholder="请输入密码" value="{{loginPassword}}" bindinput="onLoginPasswordInput" password placeholderStyle="color: #BBBBBB" />
+      </view>
+      <button class="modal-btn-primary" bindtap="onPasswordLogin">登录</button>
+    </block>
+
+    <!-- 注册表单 -->
+    <block wx:if="{{loginMode === 'register'}}">
+      <view class="modal-form">
+        <input class="modal-input" placeholder="请设置账号（2-20位）" value="{{regUsername}}" bindinput="onRegUsernameInput" placeholderStyle="color: #BBBBBB" />
+        <input class="modal-input" placeholder="请设置密码（6-20位）" value="{{regPassword}}" bindinput="onRegPasswordInput" password placeholderStyle="color: #BBBBBB" />
+        <input class="modal-input" placeholder="请确认密码" value="{{regPasswordConfirm}}" bindinput="onRegPasswordConfirmInput" password placeholderStyle="color: #BBBBBB" />
+      </view>
+      <button class="modal-btn-primary" bindtap="onPasswordRegister">注册并登录</button>
+    </block>
+
+    <view class="modal-cancel" bindtap="hideLoginModal">取消</view>
   </view>
 </view>
 
-<!-- 登录弹窗（未登录时卡密兑换也用这个） -->
-<view class="modal-mask" wx:if="{{showLoginModal}}" bindtap="hideLogin"></view>
-<view class="login-modal {{showLoginModal ? 'show' : ''}}">
-  <view class="login-modal-title">登录</view>
-  <view class="login-modal-desc">授权手机号即可登录，享受无限次生成</view>
-  <button class="login-phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
-    <text class="login-phone-icon">📱</text>
-    <text>手机号快捷登录</text>
-  </button>
-  <view class="login-modal-close" bindtap="hideLogin">取消</view>
+<!-- ========== 卡密兑换弹窗 ========== -->
+<view class="modal-mask {{showCardKeyModal ? 'fade-in' : ''}}" wx:if="{{showCardKeyModal}}" bindtap="hideCardKeyModal"></view>
+<view class="modal-center {{showCardKeyModal ? 'pop-in' : ''}}" wx:if="{{showCardKeyModal}}">
+  <view class="modal-card">
+    <view class="modal-title">卡密兑换</view>
+    <view class="modal-subtitle">输入卡密兑换1个月会员</view>
+    <input
+      class="modal-input"
+      placeholder="请输入卡密，如 VIP-AB3D-K9F2"
+      value="{{cardKeyInput}}"
+      bindinput="onCardKeyInput"
+      placeholderStyle="color: #BBBBBB"
+    />
+    <button class="modal-btn-primary" bindtap="onVerifyCardKey">确认兑换</button>
+    <view class="modal-cancel" bindtap="hideCardKeyModal">取消</view>
+  </view>
 </view>

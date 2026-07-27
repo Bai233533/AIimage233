@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- 相册外框 -->
+  <rect x="8" y="8" width="32" height="32" rx="4" fill="url(#gradient)" stroke="#8B7355" stroke-width="2"/>
+  
+  <!-- 图片堆叠效果 -->
+  <rect x="12" y="12" width="24" height="24" rx="2" fill="url(#gradient)" stroke="#8B7355" stroke-width="1.5"/>
+  
+  <!-- 中心点 -->
+  <circle cx="24" cy="24" r="4" fill="url(#gradient)" stroke="#8B7355" stroke-width="1"/>
+  
+  <!-- 渐变定义 -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B7355"/>
+      <stop offset="100%" stop-color="#F8F6F4"/>
+    </linearGradient>
+  </defs>
+</svg>

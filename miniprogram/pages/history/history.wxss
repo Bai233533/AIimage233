@@ -1,7 +1,8 @@
 .container {
-  padding: 20px;
+  padding: 16px;
   padding-bottom: 40px;
   min-height: 100vh;
+  background: #FFFFFF;
 }
 
 /* 头部操作 */
@@ -12,36 +13,37 @@
 }
 
 .clear-btn {
-  padding: 8px 16px;
-  background: #F5F7FA;
-  border: 1px solid #E8ECF1;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 6px 12px;
+  background: #F5F5F5;
+  border: 1px solid #E8E8E8;
+  border-radius: 4px;
+  font-size: 13px;
   color: #666666;
+  letter-spacing: 0.2px;
 }
 
 /* 时间筛选栏 */
 .filter-bar {
   display: flex;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .filter-item {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: #FFFFFF;
-  border: 1px solid #E8ECF1;
-  border-radius: 24px;
-  font-size: 14px;
+  border: 1px solid #E8E8E8;
+  border-radius: 4px;
+  font-size: 13px;
   color: #666666;
   transition: all 0.2s ease;
+  letter-spacing: 0.2px;
 }
 
 .filter-active {
-  background: #4A90E2;
-  border-color: #4A90E2;
+  background: #1E3A8A;
+  border-color: transparent;
   color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
 /* 空状态 */
@@ -54,29 +56,31 @@
 }
 
 .empty-icon-wrap {
-  width: 120px;
-  height: 120px;
-  background: linear-gradient(135deg, #F5F7FA 0%, #EBF3FC 100%);
+  width: 100px;
+  height: 100px;
+  background: #F5F5F5;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  border: 1px solid #E8E8E8;
 }
 
 .empty-icon {
-  font-size: 48px;
+  font-size: 40px;
 }
 
 .empty-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333333;
-  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1A1A1A;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
 }
 
 .empty-hint {
-  font-size: 14px;
+  font-size: 13px;
   color: #999999;
 }
 
@@ -90,16 +94,15 @@
 /* 卡片样式 - 单张 */
 .history-card {
   background: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid #F0F3F8;
+  border: 1px solid #E8E8E8;
 }
 
 .card-image-wrap {
   position: relative;
   width: 100%;
-  height: 280px;
+  height: 260px;
   overflow: hidden;
 }
 
@@ -109,31 +112,34 @@
 }
 
 .card-info {
-  padding: 16px;
+  padding: 12px;
 }
 
 .card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .tag-item {
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 2px;
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .tag-platform {
-  background: #EBF3FC;
-  color: #4A90E2;
+  background: #F5F5F5;
+  color: #666666;
+  border: 1px solid #E8E8E8;
 }
 
 .tag-ratio {
-  background: #F0F7F4;
-  color: #34C7A0;
+  background: #E8F4FD;
+  color: #1E3A8A;
+  border: 1px solid #B3D8FF;
 }
 
 .card-meta {
@@ -143,25 +149,24 @@
 }
 
 .meta-date {
-  font-size: 13px;
+  font-size: 12px;
   color: #999999;
 }
 
 /* 分组样式 */
 .history-group {
   background: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid #F0F3F8;
+  border: 1px solid #E8E8E8;
 }
 
 .group-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #F5F7FA;
+  padding: 12px;
+  border-bottom: 1px solid #E8E8E8;
 }
 
 .group-info {
@@ -171,12 +176,13 @@
 }
 
 .group-count-badge {
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #4A90E2 0%, #5BA0E8 100%);
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 4px 8px;
+  background: #1E3A8A;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 500;
   color: #FFFFFF;
+  letter-spacing: 0.2px;
 }
 
 .group-meta {
@@ -186,7 +192,7 @@
 }
 
 .group-date {
-  font-size: 13px;
+  font-size: 12px;
   color: #999999;
 }
 
@@ -196,24 +202,26 @@
 }
 
 .mini-tag {
-  font-size: 11px;
+  font-size: 10px;
   color: #666666;
-  background: #F5F7FA;
-  padding: 2px 8px;
-  border-radius: 8px;
+  background: #F5F5F5;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid #E8E8E8;
 }
 
 .group-expand {
-  width: 32px;
-  height: 32px;
-  background: #F5F7FA;
+  width: 28px;
+  height: 28px;
+  background: #F5F5F5;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   color: #999999;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
+  border: 1px solid #E8E8E8;
 }
 
 .group-expand.expanded {
@@ -224,7 +232,7 @@
 .group-preview {
   position: relative;
   width: 100%;
-  height: 240px;
+  height: 220px;
 }
 
 .preview-main {
@@ -234,15 +242,16 @@
 
 .preview-count {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+  bottom: 10px;
+  right: 10px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 2px;
+  font-size: 13px;
+  font-weight: 500;
   color: #FFFFFF;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(4px);
+  letter-spacing: 0.2px;
 }
 
 /* 展开的图片列表 */
@@ -257,29 +266,30 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px;
-  background: #F8FAFC;
-  border-radius: 12px;
+  padding: 8px;
+  background: #F5F5F5;
+  border-radius: 4px;
+  border: 1px solid #E8E8E8;
 }
 
 .expanded-index {
-  width: 28px;
-  height: 28px;
-  background: #4A90E2;
+  width: 24px;
+  height: 24px;
+  background: #1E3A8A;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: #FFFFFF;
   flex-shrink: 0;
 }
 
 .expanded-image {
   flex: 1;
-  height: 80px;
-  border-radius: 8px;
+  height: 70px;
+  border-radius: 2px;
 }
 
 /* 图片加载失败样式 */
@@ -294,22 +304,23 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #F5F7FA 0%, #E8ECF1 100%);
+  background: #F5F5F5;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid #E8E8E8;
 }
 
 .error-text {
-  font-size: 14px;
+  font-size: 13px;
   color: #999999;
 }
 
 .expanded-error {
   position: absolute;
   top: 0;
-  left: 40px;
+  left: 36px;
   right: 0;
   bottom: 0;
-  border-radius: 8px;
+  border-radius: 2px;
 }

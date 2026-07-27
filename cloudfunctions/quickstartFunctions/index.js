@@ -164,55 +164,80 @@ const deleteRecord = async (event) => {
 };
 
 // ============================================================
-// 用户登录与会员系统
+// 用户登录与会员系统（账号密码方式）
 // ============================================================
 
-// 用户登录（通过 getPhoneNumber 获取手机号）
-const userLogin = async (event) => {
+// 账号密码登录 / 注册
+const userLoginByPassword = async (event) => {
   const { openid } = await getOpenId();
-  const { phoneNumber } = event;
+  const { action, username, password } = event;
 
-  if (!phoneNumber) {
-    return { success: false, errMsg: '手机号获取失败' };
+  console.log('[账号密码登录] action:', action, 'username:', username);
+
+  if (!username || !password) {
+    return { success: false, errMsg: '账号和密码不能为空' };
   }
 
-  const now = new Date();
-  const expireTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 1个月后
-
   try {
-    // 查询用户是否已存在
-    const userRes = await db.collection('users').where({ openid }).get();
+    const userRes = await db.collection('users').where({ username }).get();
 
-    if (userRes.data.length > 0) {
-      // 已有用户，更新手机号和会员到期时间
-      const user = userRes.data[0];
-      const updateData = { phone: phoneNumber };
-
-      // 如果会员未过期，在原到期时间基础上延长1个月
-      if (user.expireTime && new Date(user.expireTime) > now) {
-        updateData.expireTime = new Date(new Date(user.expireTime).getTime() + 30 * 24 * 60 * 60 * 1000);
-      } else {
-        updateData.expireTime = expireTime;
+    if (action === 'register') {
+      // ===== 注册 =====
+      if (userRes.data.length > 0) {
+        return { success: false, errMsg: '该账号已被注册' };
       }
 
-      await db.collection('users').where({ openid }).update({ data: updateData });
-      return { success: true, expireTime: updateData.expireTime, isNew: false };
-    } else {
-      // 新用户，创建记录
+      const now = new Date();
+      const expireTime = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000); // 新用户赠送1天会员
+
       await db.collection('users').add({
         data: {
           openid,
-          phone: phoneNumber,
-          expireTime: expireTime,
+          username,
+          password, // 生产环境应使用 bcrypt 等方式加密
+          expireTime,
           createTime: now,
           freeUsed: 0
         }
       });
-      return { success: true, expireTime, isNew: true };
+
+      return {
+        success: true,
+        username,
+        isMember: true,
+        expireTime,
+        token: 'token_' + openid + '_' + Date.now()
+      };
     }
+
+    if (action === 'login') {
+      // ===== 登录 =====
+      if (userRes.data.length === 0) {
+        return { success: false, errMsg: '账号不存在' };
+      }
+
+      const user = userRes.data[0];
+
+      if (user.password !== password) {
+        return { success: false, errMsg: '密码错误' };
+      }
+
+      const now = new Date();
+      const isMember = user.expireTime && new Date(user.expireTime) > now;
+
+      return {
+        success: true,
+        username: user.username,
+        isMember,
+        expireTime: user.expireTime,
+        token: 'token_' + openid + '_' + Date.now()
+      };
+    }
+
+    return { success: false, errMsg: '未知操作' };
   } catch (err) {
-    console.error('登录失败:', err);
-    return { success: false, errMsg: '登录失败: ' + err.message };
+    console.error('[账号密码登录] 异常:', JSON.stringify(err));
+    return { success: false, errMsg: '操作失败：' + (err.message || err.errMsg || '请检查users集合是否已创建') };
   }
 };
 
@@ -393,7 +418,7 @@ exports.main = async (event, context) => {
     case "insertRecord": return await insertRecord(event);
     case "deleteRecord": return await deleteRecord(event);
     // 用户登录与会员系统
-    case "userLogin": return await userLogin(event);
+    case "userLoginByPassword": return await userLoginByPassword(event);
     case "checkMembership": return await checkMembership();
     case "verifyCardKey": return await verifyCardKey(event);
     case "generateCardKeys": return await generateCardKeys(event);

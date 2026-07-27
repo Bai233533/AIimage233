@@ -1,40 +1,42 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/chat/chat",
+    "pages/create/create",
+    "pages/clouddrive/clouddrive",
     "pages/history/history",
     "pages/detail/detail",
     "pages/profile/profile"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFFFF",
-    "navigationBarTitleText": "商品图制作",
+    "navigationBarTitleText": "AI漫剧大师",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#F5F7FA",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
+    "custom": true,
     "color": "#999999",
-    "selectedColor": "#4A90E2",
+    "selectedColor": "#1E3A8A",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页",
-        "iconPath": "images/icons/home.png",
-        "selectedIconPath": "images/icons/home-active.png"
+        "text": "对话"
       },
       {
-        "pagePath": "pages/history/history",
-        "text": "历史记录",
-        "iconPath": "images/icons/goods.png",
-        "selectedIconPath": "images/icons/goods-active.png"
+        "pagePath": "pages/create/create",
+        "text": "创作"
+      },
+      {
+        "pagePath": "pages/clouddrive/clouddrive",
+        "text": "云盘"
       },
       {
         "pagePath": "pages/profile/profile",
-        "text": "我的",
-        "iconPath": "images/icons/usercenter.png",
-        "selectedIconPath": "images/icons/usercenter-active.png"
+        "text": "我的"
       }
     ]
   },

@@ -1,0 +1,20 @@
+<view class="page">
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-bar-inner" style="height: {{navBarHeight}}px;">
+      <text class="nav-title">创作</text>
+    </view>
+  </view>
+  <view class="content">
+    <view class="empty-state">
+      <view class="empty-icon-wrap">
+        <text class="empty-icon">🎨</text>
+      </view>
+      <text class="empty-title">AI 创作中心</text>
+      <text class="empty-desc">选择创作类型，开始你的 AI 之旅</text>
+      <view class="create-btn" bindtap="goToNewChat">
+        <text class="create-btn-text">开始新对话</text>
+      </view>
+    </view>
+  </view>
+  <view class="tab-bar-placeholder"></view>
+</view>

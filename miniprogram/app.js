@@ -15,8 +15,19 @@ App({
     if (history) {
       this.globalData.history = history;
     }
+
+    // 获取系统信息（状态栏高度等）
+    try {
+      const systemInfo = wx.getSystemInfoSync();
+      this.globalData.statusBarHeight = systemInfo.statusBarHeight || 20;
+    } catch (e) {
+      this.globalData.statusBarHeight = 20;
+    }
   },
+
   globalData: {
-    history: []
+    history: [],
+    statusBarHeight: 0,
+    navBarHeight: 44
   }
 });

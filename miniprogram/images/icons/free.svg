@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <!-- 星星主体 -->
+  <path d="M8 1L10 6L15 6.5L11.5 10L12.5 15L8 12.5L3.5 15L4.5 10L1 6.5L6 6L8 1Z" fill="#F8F6F4" stroke="#8B7355" stroke-width="1" stroke-linejoin="round"/>
+  
+  <!-- 星星中心 -->
+  <circle cx="8" cy="8" r="2" fill="#A08060"/>
+</svg>

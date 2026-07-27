@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <!-- 皇冠主体 -->
+  <path d="M2 12H14L15 6L12 9L8 4L4 9L1 6L2 12Z" fill="#F8F6F4" stroke="#8B7355" stroke-width="1" stroke-linejoin="round"/>
+  
+  <!-- 皇冠尖顶 -->
+  <circle cx="2" cy="6" r="1" fill="#8B7355"/>
+  <circle cx="8" cy="4" r="1" fill="#8B7355"/>
+  <circle cx="14" cy="6" r="1" fill="#8B7355"/>
+  
+  <!-- 皇冠底部 -->
+  <rect x="2" y="12" width="12" height="2" rx="1" fill="#A08060"/>
+</svg>

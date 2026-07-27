@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+  <!-- 纸飞机主体 -->
+  <path d="M2 10L18 2L14 18L10 12L2 10Z" fill="#F8F6F4" stroke="#8B7355" stroke-width="1.5" stroke-linejoin="round"/>
+  
+  <!-- 纸飞机折痕 -->
+  <line x1="10" y1="12" x2="18" y2="2" stroke="#8B7355" stroke-width="1"/>
+  
+  <!-- 尾焰 -->
+  <path d="M2 10L6 12" stroke="#A08060" stroke-width="1" stroke-linecap="round"/>
+</svg>
