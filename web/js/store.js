@@ -146,7 +146,43 @@ const Store = {
     let history = this.getHistory();
     history = records.concat(history);
     this.saveHistory(history);
+
+    // 异步同步到云端（不阻塞主流程）
+    if (typeof API !== 'undefined' && Store.isLoggedIn()) {
+      API.saveHistoryRecord(groupId, prompt, images).catch(() => {});
+    }
+
     return records;
+  },
+
+  async syncHistoryFromCloud() {
+    if (!Store.isLoggedIn()) return;
+    try {
+      const res = await API.getHistory();
+      if (res && res.success && res.records && res.records.length > 0) {
+        const cloudRecords = res.records;
+        const localHistory = this.getHistory();
+
+        // 用 groupId 去重，云端数据优先
+        const mergedMap = new Map();
+        for (const r of cloudRecords) {
+          mergedMap.set(r.id, r);
+        }
+        for (const r of localHistory) {
+          if (!mergedMap.has(r.id)) mergedMap.set(r.id, r);
+        }
+
+        const merged = Array.from(mergedMap.values());
+        merged.sort((a, b) => {
+          if (a.groupId !== b.groupId) return b.groupId - a.groupId;
+          return a.batchIndex - b.batchIndex;
+        });
+
+        this.saveHistory(merged);
+      }
+    } catch (err) {
+      console.error('云端历史同步失败:', err);
+    }
   },
 
   // ==================== 工具方法 ====================

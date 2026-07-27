@@ -31,6 +31,19 @@ CREATE TABLE IF NOT EXISTS card_keys (
 CREATE INDEX IF NOT EXISTS idx_card_keys_key ON card_keys(key);
 CREATE INDEX IF NOT EXISTS idx_card_keys_status ON card_keys(status);
 
+-- 生成历史表
+CREATE TABLE IF NOT EXISTS generation_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  openid TEXT NOT NULL,
+  group_id INTEGER NOT NULL,
+  prompt TEXT,
+  images TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_history_openid ON generation_history(openid);
+CREATE INDEX IF NOT EXISTS idx_history_group ON generation_history(group_id);
+
 -- ============================================================
 -- 初始化测试卡密（可选）
 -- ============================================================

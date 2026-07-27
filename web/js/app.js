@@ -16,6 +16,11 @@ const App = {
 
     // 处理初始路由
     this.handleRoute();
+
+    // 登录用户静默同步云端历史到本地
+    if (Store.isLoggedIn()) {
+      Store.syncHistoryFromCloud();
+    }
   },
 
   // ==================== 路由 ====================

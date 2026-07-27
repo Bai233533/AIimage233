@@ -365,6 +365,67 @@ ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
       return json({ success: true, reply });
     }
 
+    // ==================== 历史记录API ====================
+
+    // 获取历史记录
+    if (path === '/api/history/list' && method === 'GET') {
+      const authHeader = request.headers.get('Authorization');
+      const token = authHeader?.replace('Bearer ', '');
+      if (!token) return json({ success: true, records: [] });
+
+      const decoded = verifyToken(token);
+      if (!decoded) return json({ success: true, records: [] });
+
+      const { results } = await env.DB.prepare(
+        'SELECT group_id, prompt, images, created_at FROM generation_history WHERE openid = ? ORDER BY created_at DESC LIMIT 500'
+      ).bind(decoded.openid).all();
+
+      // 转换为前端格式
+      const records = [];
+      for (const row of (results || [])) {
+        try {
+          const images = JSON.parse(row.images);
+          images.forEach((img, i) => {
+            records.push({
+              id: row.group_id + i,
+              groupId: row.group_id,
+              imageSrc: img.url,
+              imageUrl: img.url,
+              prompt: row.prompt || '',
+              date: row.created_at.replace('T', ' ').slice(0, 16),
+              type: 'AI漫剧生成',
+              batchIndex: i + 1,
+              batchTotal: images.length
+            });
+          });
+        } catch (e) { /* 跳过解析失败的记录 */ }
+      }
+
+      return json({ success: true, records });
+    }
+
+    // 保存历史记录
+    if (path === '/api/history/save' && method === 'POST') {
+      const authHeader = request.headers.get('Authorization');
+      const token = authHeader?.replace('Bearer ', '');
+      if (!token) return json({ success: true });
+
+      const decoded = verifyToken(token);
+      if (!decoded) return json({ success: true });
+
+      const { groupId, prompt, images } = body;
+      if (!images || !Array.isArray(images) || images.length === 0) {
+        return json({ success: false, errMsg: '无图片数据' });
+      }
+
+      const now = new Date().toISOString();
+      await env.DB.prepare(
+        'INSERT INTO generation_history (openid, group_id, prompt, images, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind(decoded.openid, groupId || Date.now(), prompt || '', JSON.stringify(images), now).run();
+
+      return json({ success: true });
+    }
+
     // ==================== 管理员API ====================
 
     // 管理员鉴权

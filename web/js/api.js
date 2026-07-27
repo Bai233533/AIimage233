@@ -102,6 +102,18 @@ const API = {
     });
   },
 
+  // ==================== 历史记录 ====================
+  async getHistory() {
+    return await this.request('/api/history/list');
+  },
+
+  async saveHistoryRecord(groupId, prompt, images) {
+    return await this.request('/api/history/save', {
+      method: 'POST',
+      body: JSON.stringify({ groupId, prompt, images })
+    });
+  },
+
   // ==================== 图片意图检测（前端逻辑） ====================
   detectImageIntent(text) {
     if (!text) return false;

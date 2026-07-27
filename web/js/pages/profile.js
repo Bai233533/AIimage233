@@ -3,12 +3,7 @@
  */
 
 const ProfilePage = {
-  // 状态
-  state: {
-    showLoginModal: false,
-    loginMode: 'login', // 'login' | 'register'
-    showCardKeyModal: false
-  },
+  // 状态（认证状态由 Auth 模块管理）
 
   render() {
     const userInfo = Store.getUserInfo();
@@ -80,12 +75,23 @@ const ProfilePage = {
 
     html += '</div>';
 
-    // 弹窗
-    if (this.state.showLoginModal) {
-      html += this._renderLoginModal();
+    // 弹窗（使用 Auth 共享模块）
+    if (Auth.state.showLoginModal) {
+      html += Auth.renderLoginModal({
+        prefix: 'profile-',
+        showRegister: true,
+        onClose: 'ProfilePage.hideLogin()',
+        onLogin: 'ProfilePage.doLogin()',
+        onRegister: 'ProfilePage.doRegister()',
+        onCardKey: 'ProfilePage.showCardKey()'
+      });
     }
-    if (this.state.showCardKeyModal) {
-      html += this._renderCardKeyModal();
+    if (Auth.state.showCardKeyModal) {
+      html += Auth.renderCardKeyModal({
+        prefix: 'profile-',
+        onClose: 'ProfilePage.hideCardKey()',
+        onVerify: 'ProfilePage.doVerifyCardKey()'
+      });
     }
 
     return html;
@@ -118,169 +124,50 @@ const ProfilePage = {
     }
   },
 
-  // ==================== 登录弹窗 ====================
-  _renderLoginModal() {
-    const isLogin = this.state.loginMode === 'login';
-    let html = '<div class="overlay" onclick="ProfilePage.hideLogin()"></div>';
-    html += '<div class="login-modal slide-up">';
-    html += '<div class="login-modal-title">' + (isLogin ? '登录' : '注册') + '</div>';
-    html += '<div class="login-modal-desc">' + (isLogin ? '登录后可保存聊天记录，享受无限次生成' : '注册即送1天试用会员') + '</div>';
-
-    if (isLogin) {
-      html += '<input class="login-input" id="login-username" placeholder="请输入账号" />';
-      html += '<input class="login-input" id="login-password" type="password" placeholder="请输入密码" />';
-      html += '<div class="login-submit-btn" onclick="ProfilePage.doLogin()">登录</div>';
-      html += '<div class="login-switch" onclick="ProfilePage.switchMode(\'register\')">还没有账号？去注册</div>';
-      html += '<div class="login-cardkey-link" onclick="ProfilePage.showCardKey()">已有卡密？点击兑换</div>';
-    } else {
-      html += '<input class="login-input" id="reg-username" placeholder="请输入账号（2-20字符）" />';
-      html += '<input class="login-input" id="reg-password" type="password" placeholder="请输入密码（6-20字符）" />';
-      html += '<input class="login-input" id="reg-password-confirm" type="password" placeholder="请确认密码" />';
-      html += '<div class="login-submit-btn" onclick="ProfilePage.doRegister()">注册</div>';
-      html += '<div class="login-switch" onclick="ProfilePage.switchMode(\'login\')">已有账号？去登录</div>';
-    }
-
-    html += '<div class="login-close" onclick="ProfilePage.hideLogin()">取消</div>';
-    html += '</div>';
-    return html;
-  },
-
+  // ==================== 登录弹窗（委托 Auth 模块） ====================
   showLogin() {
-    this.state.showLoginModal = true;
-    this.state.loginMode = 'login';
+    Auth.showLogin();
     document.getElementById('page-container').innerHTML = this.render();
   },
 
   hideLogin() {
-    this.state.showLoginModal = false;
-    document.getElementById('page-container').innerHTML = this.render();
-  },
-
-  switchMode(mode) {
-    this.state.loginMode = mode;
+    Auth.hideLogin();
     document.getElementById('page-container').innerHTML = this.render();
   },
 
   async doLogin() {
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value.trim();
-
-    if (!username) { UI.toast('请输入账号'); return; }
-    if (!password) { UI.toast('请输入密码'); return; }
-
-    UI.showLoading('登录中...');
-    try {
-      const res = await API.login(username, password);
-      UI.hideLoading();
-
-      if (res && res.success) {
-        const formatted = res.expireTime ? Store.formatDate(new Date(res.expireTime)) : '';
-        Store.setUserToken(res.token || 'h5_' + Date.now());
-        Store.setUserInfo({
-          username: res.username,
-          isMember: res.isMember,
-          expireTime: formatted
-        });
-        this.state.showLoginModal = false;
-        UI.toast('登录成功', 'success');
-        this.onShow();
-      } else {
-        UI.toast(res.errMsg || '登录失败');
-      }
-    } catch (err) {
-      UI.hideLoading();
-      UI.toast('登录失败，请重试');
+    const result = await Auth.doLogin('profile-');
+    if (result) {
+      this.onShow();
     }
   },
 
   async doRegister() {
-    const username = document.getElementById('reg-username').value.trim();
-    const password = document.getElementById('reg-password').value.trim();
-    const confirm = document.getElementById('reg-password-confirm').value.trim();
-
-    if (!username) { UI.toast('请输入账号'); return; }
-    if (username.length < 2 || username.length > 20) { UI.toast('账号需2-20个字符'); return; }
-    if (!password) { UI.toast('请输入密码'); return; }
-    if (password.length < 6 || password.length > 20) { UI.toast('密码需6-20个字符'); return; }
-    if (password !== confirm) { UI.toast('两次密码不一致'); return; }
-
-    UI.showLoading('注册中...');
-    try {
-      const res = await API.register(username, password);
-      UI.hideLoading();
-
-      if (res && res.success) {
-        const formatted = res.expireTime ? Store.formatDate(new Date(res.expireTime)) : '';
-        Store.setUserToken(res.token || 'h5_' + Date.now());
-        Store.setUserInfo({
-          username: res.username,
-          isMember: res.isMember,
-          expireTime: formatted
-        });
-        this.state.showLoginModal = false;
-        UI.toast('注册成功', 'success');
-        this.onShow();
-      } else {
-        UI.toast(res.errMsg || '注册失败');
-      }
-    } catch (err) {
-      UI.hideLoading();
-      UI.toast('注册失败，请重试');
+    const result = await Auth.doRegister('profile-');
+    if (result) {
+      this.onShow();
     }
   },
 
-  // ==================== 卡密弹窗 ====================
-  _renderCardKeyModal() {
-    let html = '<div class="overlay" onclick="ProfilePage.hideCardKey()"></div>';
-    html += '<div class="cardkey-modal slide-up">';
-    html += '<div class="login-modal-title">卡密兑换</div>';
-    html += '<div class="login-modal-desc">输入卡密，兑换30天会员</div>';
-    html += '<input class="cardkey-input" id="cardkey-input" placeholder="请输入卡密，如 VIP-AB3D-K9F2" />';
-    html += '<div class="cardkey-confirm-btn" onclick="ProfilePage.doVerifyCardKey()">确认兑换</div>';
-    html += '<div class="login-close" onclick="ProfilePage.hideCardKey()">取消</div>';
-    html += '</div>';
-    return html;
-  },
-
+  // ==================== 卡密弹窗（委托 Auth 模块） ====================
   showCardKey() {
     if (!Store.isLoggedIn()) {
       UI.toast('请先登录后再兑换');
       return;
     }
-    this.state.showLoginModal = false;
-    this.state.showCardKeyModal = true;
+    Auth.showCardKey();
     document.getElementById('page-container').innerHTML = this.render();
   },
 
   hideCardKey() {
-    this.state.showCardKeyModal = false;
+    Auth.hideCardKey();
     document.getElementById('page-container').innerHTML = this.render();
   },
 
   async doVerifyCardKey() {
-    const cardKey = document.getElementById('cardkey-input').value.trim();
-    if (!cardKey) { UI.toast('请输入卡密'); return; }
-
-    const userInfo = Store.getUserInfo();
-    const username = userInfo.username;
-
-    UI.showLoading('验证中...');
-    try {
-      const res = await API.verifyCardKey(username, cardKey);
-      UI.hideLoading();
-
-      if (res && res.success) {
-        const formatted = res.expireTime ? Store.formatDate(new Date(res.expireTime)) : '';
-        Store.setUserInfo({ ...userInfo, isMember: true, expireTime: formatted });
-        this.state.showCardKeyModal = false;
-        UI.toast('兑换成功！', 'success');
-        this.onShow();
-      } else {
-        UI.toast(res.errMsg || '兑换失败');
-      }
-    } catch (err) {
-      UI.hideLoading();
-      UI.toast('验证失败，请重试');
+    const result = await Auth.doVerifyCardKey('profile-');
+    if (result) {
+      this.onShow();
     }
   },
 

@@ -26,12 +26,7 @@ const ChatPage = {
     freeUsed: 0,
     freeLimit: 3,
     showPromptPreview: false,
-    previewPromptText: '',
-    showLoginModal: false,
-    showCardKeyModal: false,
-    cardKeyInput: '',
-    loginUsername: '',
-    loginPassword: ''
+    previewPromptText: ''
   },
 
   _fileInput: null,
@@ -222,33 +217,28 @@ const ChatPage = {
 
     let html = '';
 
-    // 登录弹窗
-    if (this.state.showLoginModal) {
+    // 登录弹窗（使用 Auth 共享模块）
+    if (Auth.state.showLoginModal) {
       html += '<div class="dynamic-modal">';
-      html += '<div class="overlay" onclick="ChatPage.hideLogin()"></div>';
-      html += '<div class="login-modal slide-up">';
-      html += '<div class="login-modal-title">登录</div>';
-      html += '<div class="login-modal-desc">登录后可保存聊天记录，享受无限次生成</div>';
-      html += '<input class="login-input" id="chat-login-username" placeholder="请输入账号" />';
-      html += '<input class="login-input" id="chat-login-password" type="password" placeholder="请输入密码" />';
-      html += '<div class="login-submit-btn" onclick="ChatPage.doLogin()">登录</div>';
-      html += '<div class="login-switch" onclick="App.navigate(\'profile\')">还没有账号？去注册</div>';
-      html += '<div class="login-cardkey-link" onclick="ChatPage.showCardKey()">已有卡密？点击兑换</div>';
-      html += '<div class="login-close" onclick="ChatPage.hideLogin()">取消</div>';
-      html += '</div></div>';
+      html += Auth.renderLoginModal({
+        prefix: 'chat-',
+        showRegister: false,
+        onClose: 'ChatPage.closeLogin()',
+        onLogin: 'ChatPage.doLogin()',
+        onCardKey: 'ChatPage.showCardKey()'
+      });
+      html += '</div>';
     }
 
-    // 卡密弹窗
-    if (this.state.showCardKeyModal) {
+    // 卡密弹窗（使用 Auth 共享模块）
+    if (Auth.state.showCardKeyModal) {
       html += '<div class="dynamic-modal">';
-      html += '<div class="overlay" onclick="ChatPage.hideCardKey()"></div>';
-      html += '<div class="cardkey-modal slide-up">';
-      html += '<div class="login-modal-title">卡密兑换</div>';
-      html += '<div class="login-modal-desc">输入卡密，兑换30天会员</div>';
-      html += '<input class="cardkey-input" id="chat-cardkey-input" placeholder="请输入卡密，如 VIP-AB3D-K9F2" />';
-      html += '<div class="cardkey-confirm-btn" onclick="ChatPage.doVerifyCardKey()">确认兑换</div>';
-      html += '<div class="login-close" onclick="ChatPage.hideCardKey()">取消</div>';
-      html += '</div></div>';
+      html += Auth.renderCardKeyModal({
+        prefix: 'chat-',
+        onClose: 'ChatPage.hideCardKey()',
+        onVerify: 'ChatPage.doVerifyCardKey()'
+      });
+      html += '</div>';
     }
 
     // 提示词预览弹窗
@@ -765,87 +755,48 @@ const ChatPage = {
     }
   },
 
-  // ==================== 登录弹窗 ====================
+  // ==================== 登录弹窗（委托 Auth 模块） ====================
   showLogin() {
-    this.state.showLoginModal = true;
+    Auth.showLogin();
+    this._renderModals();
+  },
+
+  closeLogin() {
+    Auth.closeLogin();
     this._renderModals();
   },
 
   hideLogin() {
-    this.state.showLoginModal = false;
+    Auth.hideLogin();
     this._renderModals();
   },
 
   async doLogin() {
-    const username = document.getElementById('chat-login-username').value.trim();
-    const password = document.getElementById('chat-login-password').value.trim();
-
-    if (!username) { UI.toast('请输入账号'); return; }
-    if (!password) { UI.toast('请输入密码'); return; }
-
-    UI.showLoading('登录中...');
-    try {
-      const res = await API.login(username, password);
-      UI.hideLoading();
-
-      if (res && res.success) {
-        const formatted = res.expireTime ? Store.formatDate(new Date(res.expireTime)) : '';
-        Store.setUserToken(res.token || 'h5_' + Date.now());
-        Store.setUserInfo({ username: res.username, isMember: res.isMember, expireTime: formatted });
-        this.state.isLoggedIn = true;
-        this.state.isMember = res.isMember;
-        this.state.showLoginModal = false;
-        UI.toast('登录成功', 'success');
-        this._renderModals();
-      } else {
-        UI.toast(res.errMsg || '登录失败');
-      }
-    } catch (err) {
-      UI.hideLoading();
-      UI.toast('登录失败，请重试');
+    const result = await Auth.doLogin('chat-');
+    if (result) {
+      this.state.isLoggedIn = true;
+      this.state.isMember = result.isMember;
+      this._renderModals();
     }
   },
 
-  // ==================== 卡密弹窗 ====================
+  // ==================== 卡密弹窗（委托 Auth 模块） ====================
   showCardKey() {
-    this.state.showLoginModal = false;
-    this.state.showCardKeyModal = true;
+    Auth.showCardKey();
     this._renderModals();
   },
 
   hideCardKey() {
-    this.state.showCardKeyModal = false;
+    Auth.hideCardKey();
     this._renderModals();
   },
 
   async doVerifyCardKey() {
-    const cardKey = document.getElementById('chat-cardkey-input').value.trim();
-    if (!cardKey) { UI.toast('请输入卡密'); return; }
-
-    const userInfo = Store.getUserInfo();
-    const username = userInfo.username || document.getElementById('chat-login-username')?.value.trim();
-
-    if (!username) { UI.toast('请先登录'); return; }
-
-    UI.showLoading('验证中...');
-    try {
-      const res = await API.verifyCardKey(username, cardKey);
-      UI.hideLoading();
-
-      if (res && res.success) {
-        const formatted = res.expireTime ? Store.formatDate(new Date(res.expireTime)) : '';
-        Store.setUserInfo({ ...userInfo, username, isMember: true, expireTime: formatted });
-        this.state.isMember = true;
-        this.state.isLoggedIn = true;
-        this.state.showCardKeyModal = false;
-        UI.toast('兑换成功！', 'success');
-        this._renderModals();
-      } else {
-        UI.toast(res.errMsg || '兑换失败');
-      }
-    } catch (err) {
-      UI.hideLoading();
-      UI.toast('验证失败，请重试');
+    const result = await Auth.doVerifyCardKey('chat-');
+    if (result) {
+      this.state.isMember = true;
+      this.state.isLoggedIn = true;
+      this._renderModals();
     }
   },
 
