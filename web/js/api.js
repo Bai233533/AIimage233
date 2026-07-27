@@ -1,11 +1,21 @@
 /**
- * api.js - 调用后端API（替代CloudBase云函数）
+ * api.js - 调用后端API
+ * 
+ * 配置说明：
+ * 部署 Workers 后，将下面的 API_BASE 改为你的 Workers 域名
+ * 例如：https://ai-drama-api.your-name.workers.dev
  */
+
+const API_CONFIG = {
+  // Cloudflare Workers 后端地址（部署后修改这里）
+  // 例如：https://ai-drama-api.xxx.workers.dev
+  API_BASE: '' // 留空则使用相对路径，适合同域部署
+};
 
 const API = {
 
   // ==================== 基础请求方法 ====================
-  async request(url, options = {}) {
+  async request(path, options = {}) {
     const token = Store.getUserToken();
     const headers = {
       'Content-Type': 'application/json',
@@ -14,6 +24,8 @@ const API = {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+
+    const url = API_CONFIG.API_BASE ? API_CONFIG.API_BASE + path : path;
 
     const response = await fetch(url, {
       ...options,
