@@ -369,7 +369,7 @@ ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
 
     // 管理员鉴权
     function isAdmin(body) {
-      return body.adminSecret === 'ADMIN_2026';
+      return body.adminSecret === '233533';
     }
 
     // 生成单个卡密
