@@ -93,6 +93,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// 自动检测 API 基础路径：线上部署用相对路径，本地打开(file://)用线上绝对地址
+const API_BASE = location.protocol === 'https:' ? '' : 'https://ai-drama-master.pages.dev';
+
 let lastGenerated = [];
 
 function showToast(msg, isErr) {
@@ -114,7 +117,7 @@ async function generate() {
   btn.disabled = true;
   btn.textContent = '生成中...';
   try {
-    const res = await fetch('/api/admin/generate-card-keys', {
+    const res = await fetch(API_BASE + '/api/admin/generate-card-keys', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ adminSecret, count: parseInt(count), prefix, days: parseInt(days) })
@@ -148,7 +151,7 @@ async function loadList() {
   btn.disabled = true;
   btn.textContent = '加载中...';
   try {
-    const res = await fetch('/api/admin/list-card-keys', {
+    const res = await fetch(API_BASE + '/api/admin/list-card-keys', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ adminSecret })
