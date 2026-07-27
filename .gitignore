@@ -30,3 +30,9 @@ cloudfunctions/*/node_modules/
 
 # 测试文件
 test-*.js
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
