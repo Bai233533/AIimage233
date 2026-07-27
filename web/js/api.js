@@ -7,9 +7,8 @@
  */
 
 const API_CONFIG = {
-  // Cloudflare Workers 后端地址（部署后修改这里）
-  // 例如：https://ai-drama-api.xxx.workers.dev
-  API_BASE: '' // 留空则使用相对路径，适合同域部署
+  // Cloudflare Workers 后端地址
+  API_BASE: 'https://ai-drama-api.19863435913.workers.dev'
 };
 
 const API = {
