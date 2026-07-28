@@ -8,7 +8,7 @@
 
 const API_CONFIG = {
   // Cloudflare Workers 后端地址
-  API_BASE: 'https://ai-drama-api.19863435913.workers.dev'
+  API_BASE: 'https://api.jiachuang233.xyz'
 };
 
 const API = {
