@@ -1,9 +1,6 @@
 # 依赖目录
 node_modules/
 
-# 小程序编译目录
-miniprogram_npm/
-
 # 系统文件
 .DS_Store
 Thumbs.db
@@ -30,3 +27,10 @@ cloudfunctions/*/node_modules/
 
 # 测试文件
 test-*.js
+
+# Cloudflare Wrangler 缓存
+.wrangler/
+web/.wrangler/
+
+# 备份文件
+*.bak

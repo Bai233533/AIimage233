@@ -1,18 +1,11 @@
 {
   "name": "ai-drama-master",
   "version": "1.0.0",
-  "description": "AI漫剧大师 - 浏览器版",
+  "description": "AI漫剧大师 - Cloudflare Pages 版",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build needed'",
-    "start": "vercel dev"
+    "build": "echo 'No build needed'"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "uuid": "^9.0.0"
-  },
-  "devDependencies": {
-    "@vercel/node": "^3.0.0"
+    "@cloudflare/kv-asset-handler": "^0.5.0"
   }
 }

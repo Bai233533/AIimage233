@@ -1,12 +1,27 @@
-# 云开发 quickstart
+# AI漫剧大师
 
-这是云开发的快速启动指引，其中演示了如何上手使用云开发的三大基础能力：
+AI 图片生成工具，上传产品/主题图片或输入文字，自动生成分镜提示词并生成配套图片。
 
-- 数据库：一个既可在小程序前端操作，也能在云函数中读写的 JSON 文档型数据库
-- 文件存储：在小程序前端直接上传/下载云端文件，在云开发控制台可视化管理
-- 云函数：在云端运行的代码，微信私有协议天然鉴权，开发者只需编写业务逻辑代码
+## 项目结构
 
-## 参考文档
+```
+├── web/                      # Web 版（Cloudflare Pages 部署）
+│   ├── functions/api/        # 后端 API（Cloudflare Pages Functions + D1）
+│   ├── js/                   # 前端 SPA
+│   ├── css/                  # 样式
+│   ├── index.html            # 入口页面
+│   ├── admin.html            # 卡密管理后台
+│   └── DEPLOY.md             # 部署指南
+├── h5/                       # H5 版（腾讯云开发部署）
+│   ├── js/                   # 前端 SPA
+│   ├── css/                  # 样式
+│   └── index.html            # 入口页面
+└── cloudfunctions/
+    └── h5Backend/            # H5 版云函数后端
+```
 
-- [云开发文档](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html)
+## 技术栈
 
+- **前端**: 原生 JS SPA（无框架）
+- **AI 模型**: 豆包大模型（对话）+ Seedream 5.0（生图）
+- **后端**: Cloudflare Pages Functions + D1 / 腾讯云开发云函数

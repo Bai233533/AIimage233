@@ -101,9 +101,11 @@ const ChatPage = {
     let html = '';
 
     if (this.state.messages.length === 0) {
-      html += '<div class="message-wrapper"><div class="bubble ai-bubble welcome-bubble">';
-      html += '<span>你好！上传产品/主题图片，或直接输入文字描述，我来帮你生成视频分镜图提示词～</span>';
-      html += '</div></div>';
+      // 桌面端：居中欢迎页；移动端：气泡提示
+      html += '<div class="welcome-page">';
+      html += '<div class="welcome-title">有什么能帮助你吗？</div>';
+      html += '<div class="welcome-subtitle">上传图片或输入文字，我来帮你生成分镜提示词</div>';
+      html += '</div>';
     }
 
     this.state.messages.forEach(msg => {
@@ -198,7 +200,7 @@ const ChatPage = {
       html += '<div class="input-camera" onclick="ChatPage.takePhoto()">📷</div>';
     }
     html += '<div class="input-field-wrap">';
-    html += '<textarea class="chat-input" id="chat-input" placeholder="发消息..." oninput="ChatPage.onInput(this.value)" onkeydown="ChatPage.onKeyDown(event)" maxlength="2000">' + this._escape(this.state.inputText) + '</textarea>';
+    html += '<textarea class="chat-input" id="chat-input" placeholder="发消息..." oninput="ChatPage.onInput(this.value)" onkeydown="ChatPage.onKeyDown(event)" oncompositionstart="ChatPage.onCompositionStart()" oncompositionend="ChatPage.onCompositionEnd()" maxlength="2000">' + this._escape(this.state.inputText) + '</textarea>';
     html += '</div>';
     if (!this.state.inputText && this.state.referenceImagePreviews.length === 0) {
       html += '<div class="input-plus" onclick="ChatPage.chooseFromAlbum()">➕</div>';
@@ -274,6 +276,7 @@ const ChatPage = {
     const input = document.getElementById('chat-input');
     if (input) {
       input.addEventListener('input', () => {
+        if (this._composing) return;
         input.style.height = 'auto';
         input.style.height = Math.min(input.scrollHeight, 80) + 'px';
       });
@@ -350,10 +353,55 @@ const ChatPage = {
   },
 
   // ==================== 输入 ====================
+  _composing: false,
+
+  onCompositionStart() {
+    this._composing = true;
+  },
+
+  onCompositionEnd() {
+    this._composing = false;
+    // 组合结束后用最终值更新状态并刷新发送按钮
+    const input = document.getElementById('chat-input');
+    if (input) {
+      this.state.inputText = input.value;
+      this._updateSendButton();
+    }
+  },
+
   onInput(value) {
+    // IME 组合中不处理，避免干扰输入法
+    if (this._composing) return;
     this.state.inputText = value;
-    // 只更新发送按钮显示状态
-    this._updateInputArea();
+    // 只更新发送按钮显示状态，不重建整个输入区域
+    this._updateSendButton();
+  },
+
+  _updateSendButton() {
+    const sendBtn = document.querySelector('.input-send');
+    const cameraBtn = document.querySelector('.input-camera');
+    const plusBtn = document.querySelector('.input-plus');
+    const hasInput = this.state.inputText || this.state.referenceImagePreviews.length > 0;
+
+    if (hasInput) {
+      if (!sendBtn) {
+        // 需要显示发送按钮：隐藏 camera/plus，添加 send
+        if (cameraBtn) cameraBtn.style.display = 'none';
+        if (plusBtn) plusBtn.style.display = 'none';
+        const bar = document.querySelector('.chat-input-bar');
+        if (bar && !bar.querySelector('.input-send')) {
+          const div = document.createElement('div');
+          div.className = 'input-send';
+          div.onclick = () => this.sendMessage();
+          div.innerHTML = '<div class="send-arrow"></div>';
+          bar.appendChild(div);
+        }
+      }
+    } else {
+      if (sendBtn) sendBtn.remove();
+      if (cameraBtn) cameraBtn.style.display = '';
+      if (plusBtn) plusBtn.style.display = '';
+    }
   },
 
   onKeyDown(e) {
@@ -401,7 +449,8 @@ const ChatPage = {
     this.state.referenceImages = [];
     this.state.referenceImagePreviews = [];
 
-    this._updateMessages();
+    // 增量追加用户消息到 DOM
+    this._updateMessage(userMsg.id, {});
     this._updateInputArea();
     this._scrollToBottom();
 
@@ -431,7 +480,7 @@ const ChatPage = {
       thinking: true,
       thinkingText: '正在识别图片...'
     });
-    this._updateMessages();
+    this._updateMessage(aiMsgId, {});
     this._scrollToBottom();
 
     this.state.generating = true;
@@ -509,7 +558,7 @@ const ChatPage = {
       thinking: true,
       thinkingText: 'AI 正在思考...'
     });
-    this._updateMessages();
+    this._updateMessage(aiMsgId, {});
     this._scrollToBottom();
 
     this.state.generating = true;
@@ -749,7 +798,7 @@ const ChatPage = {
     if (result.cancel) return;
     if (result.tapIndex === 0) {
       this.state.messages = this.state.messages.filter(m => m.id !== msgId);
-      this._updateMessages();
+      this._fullRebuildMessages();
       this._saveConversation();
       UI.toast('已删除', 'success');
     }
@@ -849,22 +898,88 @@ const ChatPage = {
     const msg = this.state.messages.find(m => m.id === msgId);
     if (msg) {
       Object.assign(msg, updates);
-      this._updateMessages();
+      // 增量更新：只重建变化的那条消息 DOM
+      const el = document.getElementById('chat-messages');
+      if (el) {
+        const msgEl = el.querySelector('[data-msg-id="' + msgId + '"]');
+        if (msgEl) {
+          const temp = document.createElement('div');
+          temp.innerHTML = this._renderOneMessage(msg);
+          const newNode = temp.firstChild;
+          msgEl.replaceWith(newNode);
+        } else {
+          // 新消息，追加到末尾（placeholder 之前）
+          const placeholder = el.querySelector('.bottom-placeholder');
+          const temp = document.createElement('div');
+          temp.innerHTML = this._renderOneMessage(msg);
+          const newNode = temp.firstChild;
+          el.insertBefore(newNode, placeholder);
+        }
+        // 绑定长按事件委托（只绑定一次）
+        this._ensureLongPress(el);
+      }
       this._scrollToBottom();
       this._saveConversation();
     }
   },
 
-  _updateMessages() {
+  _renderOneMessage(msg) {
+    let html = '';
+    if (msg.role === 'user') {
+      html += '<div class="message-wrapper user-msg-wrapper" data-msg-id="' + msg.id + '">';
+      if (msg.images && msg.images.length > 0) {
+        html += '<div class="user-images-full">';
+        msg.images.forEach(img => {
+          html += '<img class="user-chat-image-full" src="' + img + '" onclick="ChatPage.previewImage(\'' + img + '\')" />';
+        });
+        html += '</div>';
+      }
+      if (msg.text) {
+        html += '<div class="user-text-row"><div class="bubble user-bubble"><span>' + this._escape(msg.text) + '</span></div></div>';
+      }
+      html += '</div>';
+    } else {
+      html += '<div class="ai-msg-block" data-msg-id="' + msg.id + '">';
+      if (msg.thinking) {
+        html += '<div class="thinking-row"><div class="thinking-content">';
+        html += '<div class="thinking-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+        html += '<span class="thinking-text">' + this._escape(msg.thinkingText || '正在思考中...') + '</span>';
+        html += '</div></div>';
+      }
+      if (msg.text && !msg.thinking) {
+        html += '<div class="ai-text-row"><div class="ai-plain-text">' + this._escape(msg.text) + '</div></div>';
+      }
+      if (msg.images && msg.images.length > 0 && !msg.thinking) {
+        const gridClass = msg.images.length > 2 ? 'grid-multi' : 'grid-' + msg.images.length;
+        html += '<div class="ai-images-full"><div class="ai-image-grid ' + gridClass + '">';
+        msg.images.forEach(img => {
+          html += '<img class="ai-generated-image" src="' + img.url + '" onclick="ChatPage.previewImage(\'' + img.url + '\')" loading="lazy" />';
+        });
+        html += '</div></div>';
+        html += '<div class="ai-actions">';
+        html += '<div class="ai-action-btn" onclick="ChatPage.saveImages(' + msg.id + ')">保存图片</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    return html;
+  },
+
+  _ensureLongPress(el) {
+    if (this._longPressBound) return;
+    this._longPressBound = true;
+    this._longPressCleanup = UI.setupLongPress(el, '[data-msg-id]', (target) => {
+      const msgId = parseInt(target.dataset.msgId);
+      if (msgId) this.onMessageLongPress(msgId);
+    });
+  },
+
+  // 完整重建消息列表（仅初次加载和删除消息时使用）
+  _fullRebuildMessages() {
     const el = document.getElementById('chat-messages');
     if (el) {
       el.innerHTML = this._renderMessages() + '<div class="bottom-placeholder"></div>';
-      // 设置长按事件委托
-      if (this._longPressCleanup) this._longPressCleanup();
-      this._longPressCleanup = UI.setupLongPress(el, '[data-msg-id]', (target) => {
-        const msgId = parseInt(target.dataset.msgId);
-        if (msgId) this.onMessageLongPress(msgId);
-      });
+      this._ensureLongPress(el);
     }
   },
 
@@ -877,12 +992,12 @@ const ChatPage = {
   },
 
   _scrollToBottom() {
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       const el = document.getElementById('chat-messages');
       if (el) {
         el.scrollTop = el.scrollHeight;
       }
-    }, 100);
+    });
   },
 
   // ==================== 对话持久化 ====================

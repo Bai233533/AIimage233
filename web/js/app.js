@@ -1,5 +1,5 @@
 /**
- * app.js - 主应用（路由、初始化、TabBar 管理）
+ * app.js - 主应用（路由、初始化、TabBar 管理、桌面端侧边栏）
  */
 
 const App = {
@@ -14,6 +14,9 @@ const App = {
     // 设置 TabBar
     this._setupTabBar();
 
+    // 设置侧边栏
+    this._setupSidebar();
+
     // 处理初始路由
     this.handleRoute();
 
@@ -21,6 +24,9 @@ const App = {
     if (Store.isLoggedIn()) {
       Store.syncHistoryFromCloud();
     }
+
+    // 更新侧边栏用户信息
+    this._updateSidebarUser();
   },
 
   // ==================== 路由 ====================
@@ -40,6 +46,9 @@ const App = {
     // 渲染导航栏和 TabBar
     this._updateTabBar(route);
 
+    // 更新侧边栏高亮
+    this._updateSidebarActive(route, params);
+
     // 页面路由
     switch (route) {
       case 'home':
@@ -53,13 +62,6 @@ const App = {
         this._showTabBar();
         const conv = Store.createConversation('新对话');
         this.navigate('chat/' + conv.id);
-        break;
-
-      case 'clouddrive':
-        this._showTabBar();
-        this._renderNavbar('云盘', false);
-        document.getElementById('page-container').innerHTML =
-          '<div class="empty-state"><div class="empty-state-icon">☁️</div><div class="empty-state-text">云盘功能开发中...</div></div>';
         break;
 
       case 'profile':
@@ -82,6 +84,13 @@ const App = {
       default:
         this.navigate('home');
     }
+  },
+
+  // ==================== 新建对话 ====================
+  createNewChat() {
+    const conv = Store.createConversation('新对话');
+    this.navigate('chat/' + conv.id);
+    this._refreshSidebar();
   },
 
   // ==================== TabBar ====================
@@ -159,6 +168,80 @@ const App = {
         '<div style="width:36px;"></div>' +
         '</div>';
     }
+  },
+
+  // ==================== 桌面端侧边栏 ====================
+  _setupSidebar() {
+    this._refreshSidebar();
+  },
+
+  _refreshSidebar() {
+    const listEl = document.getElementById('sidebar-history-list');
+    if (!listEl) return;
+
+    const conversations = Store.getConversations();
+    if (!conversations || conversations.length === 0) {
+      listEl.innerHTML = '<div style="padding:12px;color:#BBB;font-size:13px;">暂无对话</div>';
+      return;
+    }
+
+    // 按更新时间倒序
+    const sorted = conversations.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    listEl.innerHTML = sorted.map(conv => {
+      const title = this._escapeHtml(conv.title || '新对话');
+      return '<div class="sidebar-conv-item" data-conv-id="' + conv.id + '" onclick="App._onSidebarConvClick(' + conv.id + ')">' +
+        '<div class="sidebar-conv-item-dot"></div>' +
+        '<div class="sidebar-conv-item-text">' + title + '</div>' +
+        '</div>';
+    }).join('');
+  },
+
+  _onSidebarConvClick(convId) {
+    this.navigate('chat/' + convId);
+  },
+
+  _updateSidebarActive(route, params) {
+    // 清除所有 active
+    const items = document.querySelectorAll('.sidebar-conv-item');
+    items.forEach(el => el.classList.remove('active'));
+
+    if (route === 'chat' && params[0]) {
+      const activeEl = document.querySelector('.sidebar-conv-item[data-conv-id="' + params[0] + '"]');
+      if (activeEl) {
+        activeEl.classList.add('active');
+      }
+    }
+
+    // 刷新侧边栏列表（可能有新对话）
+    this._refreshSidebar();
+
+    // 再次高亮（因为 refresh 重建了 DOM）
+    if (route === 'chat' && params[0]) {
+      const activeEl2 = document.querySelector('.sidebar-conv-item[data-conv-id="' + params[0] + '"]');
+      if (activeEl2) {
+        activeEl2.classList.add('active');
+      }
+    }
+  },
+
+  _updateSidebarUser() {
+    const userEl = document.getElementById('sidebar-user');
+    if (!userEl) return;
+
+    const userInfo = Store.getUserInfo();
+    if (userInfo && userInfo.username) {
+      const avatarEl = userEl.querySelector('.sidebar-user-avatar');
+      const nameEl = userEl.querySelector('.sidebar-user-name');
+      if (avatarEl) avatarEl.textContent = userInfo.username.charAt(0).toUpperCase();
+      if (nameEl) nameEl.textContent = userInfo.username;
+    }
+  },
+
+  _escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 };
 

@@ -3,11 +3,16 @@
  */
 
 const Store = {
-  // ==================== 基础存储 ====================
+  // ==================== 基础存储（带缓存） ====================
+  _cache: {},
+
   get(key, defaultValue) {
+    if (key in this._cache) return this._cache[key];
     try {
       const val = localStorage.getItem(key);
-      return val ? JSON.parse(val) : (defaultValue !== undefined ? defaultValue : null);
+      const result = val ? JSON.parse(val) : (defaultValue !== undefined ? defaultValue : null);
+      this._cache[key] = result;
+      return result;
     } catch (e) {
       return defaultValue !== undefined ? defaultValue : null;
     }
@@ -15,10 +20,12 @@ const Store = {
 
   set(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+    delete this._cache[key];
   },
 
   remove(key) {
     localStorage.removeItem(key);
+    delete this._cache[key];
   },
 
   // ==================== 用户状态 ====================

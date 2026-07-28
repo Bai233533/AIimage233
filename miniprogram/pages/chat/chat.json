@@ -1,7 +1,0 @@
-{
-  "usingComponents": {
-    "generate-modal": "/components/generate-modal/generate-modal"
-  },
-  "navigationBarTitleText": "",
-  "navigationStyle": "custom"
-}

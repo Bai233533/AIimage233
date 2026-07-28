@@ -1,9 +1,0 @@
-name = "ai-drama-api"
-main = "index.js"
-compatibility_date = "2024-01-01"
-
-[vars]
-DOUBAO_API_KEY = "ark-f93f0cb1-d06a-4bf5-af7b-00787df51ebc-672cd"
-SEEDREAM_API_KEY = "ark-f93f0cb1-d06a-4bf5-af7b-00787df51ebc-672cd"
-JWT_SECRET = "ai-drama-master-secret-2024"
-ADMIN_SECRET = "ADMIN_2026"

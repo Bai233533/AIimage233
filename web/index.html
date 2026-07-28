@@ -11,20 +11,43 @@
 </head>
 <body>
   <div id="app">
-    <!-- 导航栏（动态） -->
-    <div id="navbar" class="navbar"></div>
+    <!-- 桌面端侧边栏（移动端隐藏） -->
+    <div id="sidebar" class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-new-chat" onclick="App.createNewChat()">
+          <span class="sidebar-new-chat-icon">＋</span>
+          <span>新建对话</span>
+        </div>
+      </div>
+      <div class="sidebar-mid">
+        <div class="sidebar-section-label">历史对话</div>
+        <div id="sidebar-history-list" class="sidebar-history-list"></div>
+      </div>
+      <div class="sidebar-bottom">
+        <div id="sidebar-user" class="sidebar-user" onclick="App.navigate('profile')">
+          <div class="sidebar-user-avatar">👤</div>
+          <div class="sidebar-user-name">登录/注册</div>
+        </div>
+      </div>
+    </div>
 
-    <!-- 页面内容区 -->
-    <div id="page-container" class="page-container"></div>
+    <!-- 主内容区 -->
+    <div id="main-area" class="main-area">
+      <!-- 导航栏（移动端显示，桌面端隐藏） -->
+      <div id="navbar" class="navbar"></div>
 
-    <!-- 底部 TabBar -->
-    <div id="tabbar" class="tabbar">
-      <div class="tabbar-indicator" id="tabbar-indicator"></div>
-      <div class="tabbar-items" id="tabbar-items">
-        <div class="tabbar-item" data-route="home" data-icon="💬" data-label="对话"></div>
-        <div class="tabbar-item" data-route="create" data-icon="✨" data-label="创作"></div>
-        <div class="tabbar-item" data-route="history" data-icon="🖼️" data-label="历史"></div>
-        <div class="tabbar-item" data-route="profile" data-icon="👤" data-label="我的"></div>
+      <!-- 页面内容区 -->
+      <div id="page-container" class="page-container"></div>
+
+      <!-- 底部 TabBar（移动端显示，桌面端隐藏） -->
+      <div id="tabbar" class="tabbar">
+        <div class="tabbar-indicator" id="tabbar-indicator"></div>
+        <div class="tabbar-items" id="tabbar-items">
+          <div class="tabbar-item" data-route="home" data-icon="💬" data-label="对话"></div>
+          <div class="tabbar-item" data-route="create" data-icon="✨" data-label="创作"></div>
+          <div class="tabbar-item" data-route="history" data-icon="🖼️" data-label="历史"></div>
+          <div class="tabbar-item" data-route="profile" data-icon="👤" data-label="我的"></div>
+        </div>
       </div>
     </div>
 

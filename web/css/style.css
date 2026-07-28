@@ -6,6 +6,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 侧边栏默认隐藏（移动端） */
+.sidebar { display: none; }
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -303,6 +306,29 @@ img { display: block; max-width: 100%; }
 
 .bottom-placeholder {
   height: 180px;
+}
+
+/* 欢迎页基础样式（移动端+桌面端通用） */
+.welcome-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.welcome-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin-bottom: 8px;
+}
+
+.welcome-subtitle {
+  font-size: 13px;
+  color: #999;
 }
 
 /* 消息样式 */
@@ -1342,4 +1368,311 @@ img { display: block; max-width: 100%; }
 @keyframes slideUp {
   from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
   to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* ==================== 桌面端适配 ==================== */
+@media (min-width: 769px) {
+  /* 隐藏移动端元素 */
+  .navbar, .tabbar { display: none !important; }
+
+  /* 整体布局：侧边栏 + 主区域 */
+  #app {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* 侧边栏 */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 260px;
+    min-width: 260px;
+    height: 100vh;
+    background: #F7F8FA;
+    border-right: 1px solid #E8E8E8;
+    flex-shrink: 0;
+  }
+
+  .sidebar-top {
+    padding: 16px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-new-chat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    transition: all 0.2s;
+  }
+
+  .sidebar-new-chat:hover {
+    background: #F0F0F0;
+    border-color: #CCC;
+  }
+
+  .sidebar-new-chat-icon {
+    font-size: 18px;
+    color: #1E3A8A;
+    font-weight: bold;
+  }
+
+  .sidebar-mid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px;
+  }
+
+  .sidebar-mid::-webkit-scrollbar { width: 4px; }
+  .sidebar-mid::-webkit-scrollbar-thumb { background: #DDD; border-radius: 4px; }
+
+  .sidebar-section-label {
+    padding: 8px 12px 4px;
+    font-size: 12px;
+    color: #999;
+    font-weight: 500;
+  }
+
+  .sidebar-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sidebar-conv-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #444;
+    transition: background 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-conv-item:hover {
+    background: #EEEEEE;
+  }
+
+  .sidebar-conv-item.active {
+    background: #E8ECF4;
+    color: #1E3A8A;
+    font-weight: 500;
+  }
+
+  .sidebar-conv-item-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1E3A8A;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-conv-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-bottom {
+    padding: 12px 16px;
+    border-top: 1px solid #E8E8E8;
+    flex-shrink: 0;
+  }
+
+  .sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .sidebar-user:hover {
+    background: #EEEEEE;
+  }
+
+  .sidebar-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #E8ECF4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-user-name {
+    font-size: 13px;
+    color: #444;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 主区域 */
+  .main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .page-container {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  /* 输入区域：居中、最大宽度 */
+  .input-area {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .input-area .reference-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px 0;
+  }
+
+  .input-area .reference-preview-list {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .input-area .reference-preview-item {
+    width: 40px;
+    height: 40px;
+  }
+
+  .input-area .reference-tip {
+    margin-top: 0;
+    padding-bottom: 0;
+    white-space: nowrap;
+  }
+
+  .input-area .quick-actions {
+    padding: 6px 16px;
+  }
+
+  .input-area .quick-action-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .input-area .count-picker {
+    padding: 8px 16px;
+    gap: 8px;
+  }
+
+  .input-area .count-option {
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+
+  .input-area .chat-input-bar {
+    padding: 10px 16px;
+  }
+
+  .input-area .input-field-wrap {
+    min-height: 44px;
+    max-height: 200px;
+  }
+
+  .input-area .chat-input {
+    font-size: 15px;
+    max-height: 160px;
+  }
+
+  .bottom-placeholder {
+    height: 80px;
+  }
+
+  /* 聊天消息区域居中 */
+  .chat-messages {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px 24px;
+  }
+
+  /* 欢迎页样式 */
+  .welcome-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .welcome-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 12px;
+  }
+
+  .welcome-subtitle {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 40px;
+  }
+
+  .welcome-input-wrap {
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+  }
+
+  .welcome-input {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+    outline: none;
+    background: #FFFFFF;
+    color: #1A1A1A;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: none;
+    min-height: 48px;
+    max-height: 120px;
+  }
+
+  .welcome-input:focus {
+    border-color: #1E3A8A;
+    box-shadow: 0 2px 16px rgba(30,58,138,0.12);
+  }
+
+  .welcome-input::placeholder {
+    color: #BBB;
+  }
+
+  /* Profile/History 在桌面端居中 */
+  .profile-page, .history-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px;
+  }
 }
