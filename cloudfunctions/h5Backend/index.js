@@ -19,8 +19,8 @@ const db = cloud.database();
 const DOUBAO_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3';
 // 优先使用环境变量，回退到硬编码（部署后建议在云控制台设置环境变量覆盖）
 const DOUBAO_API_KEY = process.env.DOUBAO_API_KEY || 'ark-f93f0cb1-d06a-4bf5-af7b-00787df51ebc-672cd';
-const DOUBAO_MODEL = 'doubao-seed-2-0-pro-260215';
-const SEEDREAM_MODEL = 'doubao-seedream-5-0-260128';
+const DOUBAO_MODEL = 'doubao-seed-2-1-turbo-260628';
+const SEEDREAM_MODEL = 'doubao-seedream-5-0-pro-260628';
 
 // ==================== HTTP 请求工具 ====================
 
@@ -95,33 +95,23 @@ async function generatePrompt(event) {
   // 添加所有图片
   for (let i = 0; i < images.length; i++) {
     messageContent.push({
-      type: 'input_image',
-      image_url: 'data:image/jpeg;base64,' + images[i]
+      type: 'image_url',
+      image_url: { url: 'data:image/jpeg;base64,' + images[i] }
     });
   }
 
   const userMessage = buildPromptGenerationMessage(sceneCount, hasReferenceImages, refCount, userPrompt);
-  messageContent.push({ type: 'input_text', text: userMessage });
+  messageContent.push({ type: 'text', text: userMessage });
 
   const requestData = {
     model: DOUBAO_MODEL,
-    input: [{ role: 'user', content: messageContent }]
+    messages: [{ role: 'user', content: messageContent }]
   };
 
-  const res = await httpsRequest(DOUBAO_BASE_URL + '/responses', requestData, 55000);
+  const res = await httpsRequest(DOUBAO_BASE_URL + '/chat/completions', requestData, 55000);
 
-  if (res.statusCode === 200 && res.data.output) {
-    let fullContent = '';
-    for (const item of res.data.output) {
-      if (item.type === 'message' && item.content) {
-        for (const content of item.content) {
-          if (content.type === 'output_text') {
-            fullContent = content.text.trim();
-            break;
-          }
-        }
-      }
-    }
+  if (res.statusCode === 200 && res.data.choices) {
+    const fullContent = res.data.choices[0]?.message?.content?.trim();
     if (fullContent) {
       const prompt = extractPromptFromAIResult(fullContent);
       return { success: true, fullContent, prompt };
@@ -251,23 +241,13 @@ async function generatePromptFromText(event) {
 
   const requestData = {
     model: DOUBAO_MODEL,
-    input: [{ role: 'user', content: [{ type: 'input_text', text: userMessage }] }]
+    messages: [{ role: 'user', content: [{ type: 'text', text: userMessage }] }]
   };
 
-  const res = await httpsRequest(DOUBAO_BASE_URL + '/responses', requestData, 55000);
+  const res = await httpsRequest(DOUBAO_BASE_URL + '/chat/completions', requestData, 55000);
 
-  if (res.statusCode === 200 && res.data.output) {
-    let fullContent = '';
-    for (const item of res.data.output) {
-      if (item.type === 'message' && item.content) {
-        for (const content of item.content) {
-          if (content.type === 'output_text') {
-            fullContent = content.text.trim();
-            break;
-          }
-        }
-      }
-    }
+  if (res.statusCode === 200 && res.data.choices) {
+    const fullContent = res.data.choices[0]?.message?.content?.trim();
     if (fullContent) {
       const prompt = extractPromptFromAIResult(fullContent);
       return { success: true, fullContent, prompt };
@@ -399,23 +379,13 @@ async function chat(event) {
 
   const requestData = {
     model: DOUBAO_MODEL,
-    input: inputArray
+    messages: inputArray
   };
 
-  const res = await httpsRequest(DOUBAO_BASE_URL + '/responses', requestData, 55000);
+  const res = await httpsRequest(DOUBAO_BASE_URL + '/chat/completions', requestData, 55000);
 
-  if (res.statusCode === 200 && res.data.output) {
-    let reply = '';
-    for (const item of res.data.output) {
-      if (item.type === 'message' && item.content) {
-        for (const content of item.content) {
-          if (content.type === 'output_text') {
-            reply = content.text.trim();
-            break;
-          }
-        }
-      }
-    }
+  if (res.statusCode === 200 && res.data.choices) {
+    const reply = res.data.choices[0]?.message?.content?.trim();
     if (reply) {
       return { success: true, reply };
     }

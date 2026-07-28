@@ -37,26 +37,17 @@ function extractPromptFromAIResult(fullContent) {
 }
 
 async function callDoubaoAPI(messages, apiKey, model) {
-  const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/responses', {
+  const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model, input: messages })
+    body: JSON.stringify({ model, messages })
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || 'AI请求失败');
-  let reply = '';
-  if (data.output) {
-    for (const item of data.output) {
-      if (item.type === 'message' && item.content) {
-        for (const content of item.content) {
-          if (content.type === 'output_text') { reply = content.text.trim(); break; }
-        }
-      }
-    }
-  }
+  const reply = data.choices?.[0]?.message?.content?.trim();
   if (!reply) throw new Error('AI未返回内容');
   return reply;
 }
@@ -246,7 +237,7 @@ export default {
       const messageContent = [];
       if (images && images.length > 0) {
         images.forEach(base64 => {
-          messageContent.push({ type: 'input_image', image_url: `data:image/jpeg;base64,${base64}` });
+          messageContent.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } });
         });
       }
       const userMessage = `请根据以下图片生成一套${sceneCount}个分镜的视频画面提示词。
@@ -271,8 +262,8 @@ export default {
 分镜${sceneCount}：[详细画面描述]
 
 ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
-      messageContent.push({ type: 'input_text', text: userMessage });
-      const fullContent = await callDoubaoAPI([{ role: 'user', content: messageContent }], env.DOUBAO_API_KEY, 'doubao-seed-2-0-pro-260215');
+      messageContent.push({ type: 'text', text: userMessage });
+      const fullContent = await callDoubaoAPI([{ role: 'user', content: messageContent }], env.DOUBAO_API_KEY, 'doubao-seed-2-1-turbo-260628');
       const prompt = extractPromptFromAIResult(fullContent);
       return json({ success: true, fullContent, prompt });
     }
@@ -297,7 +288,7 @@ ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
 分镜1：[详细画面描述]
 ...
 分镜${sceneCount}：[详细画面描述]`;
-      const fullContent = await callDoubaoAPI([{ role: 'user', content: [{ type: 'input_text', text: userMessage }] }], env.DOUBAO_API_KEY, 'doubao-seed-2-0-pro-260215');
+      const fullContent = await callDoubaoAPI([{ role: 'user', content: [{ type: 'text', text: userMessage }] }], env.DOUBAO_API_KEY, 'doubao-seed-2-1-turbo-260628');
       const prompt = extractPromptFromAIResult(fullContent);
       return json({ success: true, fullContent, prompt });
     }
@@ -315,7 +306,7 @@ ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
         .replace(/\n+/g, '，').replace(/，+/g, '，').replace(/^[\d]+[个、]/, '').trim();
       if (!cleanPrompt || cleanPrompt.length < 2) cleanPrompt = prompt || '请生成一张图片';
       const requestData = {
-        model: 'doubao-seedream-5-0-260128',
+        model: 'doubao-seedream-5-0-pro-260628',
         prompt: cleanPrompt,
         response_format: 'url',
         size: '2K',
@@ -361,7 +352,7 @@ ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
           inputArray.push({ role: msg.role === 'ai' ? 'assistant' : 'user', content: msg.text || '' });
         });
       }
-      const reply = await callDoubaoAPI(inputArray, env.DOUBAO_API_KEY, 'doubao-seed-2-0-pro-260215');
+      const reply = await callDoubaoAPI(inputArray, env.DOUBAO_API_KEY, 'doubao-seed-2-1-turbo-260628');
       return json({ success: true, reply });
     }
 
