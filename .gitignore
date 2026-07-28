@@ -34,3 +34,7 @@ web/.wrangler/
 
 # 备份文件
 *.bak
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
