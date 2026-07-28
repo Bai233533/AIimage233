@@ -93,8 +93,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// 自动检测 API 基础路径：线上部署用相对路径，本地打开(file://)用线上绝对地址
-const API_BASE = location.protocol === 'https:' ? '' : 'https://ai-drama-master.pages.dev';
+// API 基础路径：指向 Cloudflare Workers 后端
+const API_BASE = 'https://ai-drama-api.19863435913.workers.dev';
 
 let lastGenerated = [];
 

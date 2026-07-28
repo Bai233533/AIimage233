@@ -2,13 +2,13 @@
  * api.js - 调用后端API
  * 
  * 配置说明：
- * 使用 Cloudflare Pages Functions，后端和前端同域
- * API_BASE 留空即可（相对路径）
+ * API_BASE 指向 Cloudflare Workers 后端地址
+ * 如果前端和 API 同域（如 Pages Functions），留空即可
  */
 
 const API_CONFIG = {
-  // Pages Functions 与前端同域，使用相对路径
-  API_BASE: ''
+  // Cloudflare Workers 后端地址
+  API_BASE: 'https://ai-drama-api.19863435913.workers.dev'
 };
 
 const API = {

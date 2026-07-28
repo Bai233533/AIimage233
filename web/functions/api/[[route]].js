@@ -1,6 +1,6 @@
 /**
- * Cloudflare Pages Functions - API 路由
- * 所有 /api/* 请求都会被这个文件处理
+ * Cloudflare Worker - API 路由
+ * 所有请求都会被这个 Worker 处理
  */
 
 // CORS 头
@@ -68,9 +68,9 @@ function json(data, status = 200) {
   });
 }
 
-// 主处理函数
-export async function onRequest(context) {
-  const { request, env } = context;
+// 主处理函数（Cloudflare Workers 格式）
+export default {
+  async fetch(request, env, ctx) {
 
   // 处理 CORS 预检请求
   if (request.method === 'OPTIONS') {
@@ -478,5 +478,6 @@ ${userPrompt ? `用户补充描述：${userPrompt}` : ''}`;
   } catch (err) {
     console.error('API错误:', err);
     return json({ error: err.message || 'Internal server error' }, 500);
+  }
   }
 }
