@@ -6,4 +6,4 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "AI-戏剧-数据库"
-database_id = "YOUR_DATABASE_ID"
+database_id = "655999c0-8c60-48bb-8500-120133b23677"
